@@ -1,0 +1,14 @@
+# All time from config is in seconds
+concurrency: 1
+delay: 1
+user_agent: 
+  - "Mozilla/5.0 (X11; Linux x86_64; rv:128.0) Gecko/20100101 Firefox/128.0"
+max_depth: 0
+browser_path: ""
+browser_timeout: 120
+proxy_url: ""
+output_dir: "./output"
+session_file: "./session_data.json"
+stv:
+  username: hoangzrik@gmail.com
+  password: Bongtoi1
