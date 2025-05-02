@@ -10,5 +10,5 @@ proxy_url: ""
 output_dir: "./output"
 session_file: "./session_data.json"
 stv:
-  username: hoangzrik@gmail.com
-  password: Bongtoi1
+  username: 
+  password: 
