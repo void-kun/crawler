@@ -26,8 +26,9 @@ type Config struct {
 	ProxyURL       string        `mapstructure:"proxy_url"`
 
 	// Storage settings
-	OutputDir   string `mapstructure:"output_dir"`
-	SessionFile string `mapstructure:"session_file"`
+	OutputDir     string `mapstructure:"output_dir"`
+	SessionFile   string `mapstructure:"session_file"`
+	SessionPrefix string `mapstructure:"session_prefix"`
 
 	// Source-specific settings
 	Stv Stv `mapstructure:"stv"`

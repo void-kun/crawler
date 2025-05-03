@@ -2,7 +2,6 @@ package spider
 
 import (
 	"fmt"
-	"os"
 	"time"
 
 	"github.com/go-rod/rod"
@@ -15,38 +14,20 @@ type CaptchaHandler interface {
 
 // ManualCaptchaHandler implements CaptchaHandler by waiting for manual user intervention
 type ManualCaptchaHandler struct {
-	ScreenshotPath string
-	WaitTime       time.Duration
+	WaitTime time.Duration
 }
 
 // NewManualCaptchaHandler creates a new ManualCaptchaHandler with default settings
 func NewManualCaptchaHandler() *ManualCaptchaHandler {
 	return &ManualCaptchaHandler{
-		ScreenshotPath: "captcha.png",
-		WaitTime:       3 * time.Second,
+		WaitTime: 3 * time.Second,
 	}
 }
 
 // HandleCaptcha implements the CaptchaHandler interface for manual intervention
 func (h *ManualCaptchaHandler) HandleCaptcha(page *rod.Page) error {
-	// Take a screenshot to help the user see the captcha
-	fmt.Println("Taking screenshot to help with captcha...")
-	data, err := page.Screenshot(false, nil)
-	if err != nil {
-		fmt.Printf("Error taking captcha screenshot: %v\n", err)
-	} else {
-		err = os.WriteFile(h.ScreenshotPath, data, 0o644)
-		if err != nil {
-			fmt.Printf("Error saving captcha screenshot: %v\n", err)
-		}
-	}
-
 	fmt.Println("\n==================================================")
 	fmt.Println("CAPTCHA DETECTED - MANUAL INTERVENTION REQUIRED")
-	fmt.Println("==================================================")
-	fmt.Printf("1. Please check the '%s' screenshot\n", h.ScreenshotPath)
-	fmt.Println("2. Go to the browser window and solve the captcha manually")
-	fmt.Println("3. After solving the captcha, press Enter to continue...")
 	fmt.Println("==================================================")
 
 	// Wait for user to press Enter
@@ -56,11 +37,6 @@ func (h *ManualCaptchaHandler) HandleCaptcha(page *rod.Page) error {
 
 	// Wait for any redirects or page changes after captcha resolution
 	time.Sleep(h.WaitTime)
-	err = page.WaitLoad()
-	if err != nil {
-		fmt.Printf("Error waiting for page to load after captcha resolution: %v\n", err)
-	}
-
 	return nil
 }
 

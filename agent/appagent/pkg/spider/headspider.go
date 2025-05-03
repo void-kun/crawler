@@ -30,6 +30,7 @@ type HeadSpider struct {
 	captchaHandler    CaptchaHandler
 	sessionData       *SessionData
 	sessionFile       string
+	SessionPrefix     string
 }
 
 func (s *HeadSpider) initBrowser() error {
@@ -84,7 +85,6 @@ func (s *HeadSpider) fetch(ctx context.Context, rawURL string) error {
 		return err
 	}
 
-	fmt.Println("requiresHead:", requiresHead)
 	if requiresHead {
 		return s.fetchWithHeadBrowser(ctx, rawURL)
 	}
@@ -123,9 +123,23 @@ func (s *HeadSpider) requiresHeadBrowser(rawURL string) (bool, error) {
 }
 
 func (s *HeadSpider) fetchWithHeadBrowser(ctx context.Context, rawURL string) error {
+	if strings.HasPrefix(rawURL, s.SessionPrefix) {
+		s.SetHeadless(false)
+	} else {
+		if s.isHeadless {
+			s.SetHeadless(true)
+		}
+	}
+
 	// Create a new page for this fetch operation
 	page := s.browser.MustPage()
-	// defer page.MustClose()
+	defer page.MustClose()
+
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Println("Recovered from panic:", r)
+		}
+	}()
 
 	pageCtx, cancel := context.WithTimeout(ctx, s.browserTimeout)
 	defer cancel()
@@ -170,7 +184,6 @@ func (s *HeadSpider) fetchWithHeadBrowser(ctx context.Context, rawURL string) er
 		s.cookies = pageCookies
 	}
 
-	fmt.Println("Extracting session data...")
 	if err = s.ExtractSessionData(page); err != nil {
 		return err
 	}
@@ -280,6 +293,7 @@ func NewHeadSpider(isHeadless bool, conf *config.Config) *HeadSpider {
 		captchaHandler: NewManualCaptchaHandler(),
 		proxyURL:       conf.ProxyURL,
 		sessionFile:    conf.SessionFile,
+		SessionPrefix:  conf.SessionPrefix,
 		BasicSpider: &BasicSpider{
 			client: &http.Client{
 				Timeout: conf.BrowserTimeout * time.Second,
@@ -341,8 +355,6 @@ func (s *HeadSpider) Start(ctx context.Context, seeds []string) error {
 	if err := s.initBrowser(); err != nil {
 		return err
 	}
-	// Note: We don't defer s.closeBrowser() here because we want to keep the browser open
-	// for subsequent operations. The caller is responsible for calling Close() when done.
 
 	if err := s.ExecutePrepSteps(); err != nil {
 		return err
@@ -367,6 +379,18 @@ func (s *HeadSpider) Start(ctx context.Context, seeds []string) error {
 
 func (s *HeadSpider) AddPrepStep(step func(*rod.Browser, *HeadSpider) error) {
 	s.prepSteps = append(s.prepSteps, step)
+}
+
+func (s *HeadSpider) ExecutePreStep(step func(*rod.Browser, *HeadSpider) error) error {
+	if s.browser == nil {
+		return fmt.Errorf("browser not initialized")
+	}
+
+	if err := step(s.browser, s); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (s *HeadSpider) ExecutePrepSteps() error {

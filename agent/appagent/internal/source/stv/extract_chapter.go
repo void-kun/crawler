@@ -3,14 +3,10 @@ package sangtacviet
 import (
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/go-rod/rod"
-	"github.com/go-rod/rod/lib/proto"
 	"github.com/zrik/agent/appagent/pkg/spider"
 )
-
-const CHAPTER_URL_LENGTH = 9
 
 func (s *Sangtacviet) ExtractChapter(url string, page *rod.Page, hs *spider.HeadSpider) error {
 	paths := strings.Split(url, "/")
@@ -74,37 +70,10 @@ func (s *Sangtacviet) ExtractChapter(url string, page *rod.Page, hs *spider.Head
 	if !strings.HasPrefix(result, "error:") {
 		result, _ = ExtractTextFromHTML(result)
 
-		mapping, err := LoadCharacterMapping("examples/letter_mapping.json")
-		if err != nil {
-			return err
-		}
-
-		result = MapCharacters(result, mapping)
-		SaveTextToFile(result, "chapter", "txt")
+		SaveTextToFile(result, fmt.Sprintf("%s_%s", bookId, chapterId), "txt")
+		fmt.Println("====== Chapter extracted")
 		return nil
 	}
-
-	page.Mouse.Click(proto.InputMouseButtonLeft, 1)
-	time.Sleep(3 * time.Second)
-
-	fmt.Println("Waiting for page to load...")
-	page.Activate()
-	page.Reload()
-	page.MustWaitLoad()
-
-	for {
-		page.Mouse.Click(proto.InputMouseButtonLeft, 1)
-		spider.CircleMoveMouse(page)
-
-		contentElements := page.MustElements("div#content-container > div i")
-		fmt.Printf("Extracting chapter: %d\n", len(contentElements))
-		if len(contentElements) > 0 {
-			break
-		}
-		time.Sleep(1 * time.Second)
-	}
-	hs.ExtractSessionData(page)
-	hs.SaveSessionDataToJSON()
 
 	return fmt.Errorf("failed to extract chapter: %s", result)
 }

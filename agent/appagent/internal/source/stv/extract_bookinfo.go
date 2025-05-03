@@ -9,8 +9,6 @@ import (
 	"github.com/zrik/agent/appagent/pkg/spider"
 )
 
-const BOOK_INFO_URL_LENGTH = 8
-
 func (s *Sangtacviet) ExtractBookInfo(url string, page *rod.Page, hs *spider.HeadSpider) error {
 	paths := strings.Split(url, "/")
 	fmt.Printf("Extracting book info: valid path length %d, current path length %d\n", BOOK_INFO_URL_LENGTH, len(paths))

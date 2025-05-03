@@ -6,7 +6,8 @@ import (
 )
 
 type WebSource interface {
-	ExtractSession(browser *rod.Browser, s *spider.HeadSpider) error
+	ExtractSourceSession(browser *rod.Browser, hs *spider.HeadSpider) error
+	ExtractSession(url string, page *rod.Page, hs *spider.HeadSpider) error
 	ExtractChapter(url string, page *rod.Page, hs *spider.HeadSpider) error
 	ExtractBookInfo(url string, page *rod.Page, hs *spider.HeadSpider) error
 }

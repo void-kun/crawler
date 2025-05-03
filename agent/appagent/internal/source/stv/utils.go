@@ -1,7 +1,6 @@
 package sangtacviet
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -188,7 +187,6 @@ func ExtractTextFromHTML(htmlContent string) (string, error) {
 
 			// Add the extracted text to the result if it's not empty
 			if text := strings.TrimSpace(pText.String()); text != "" {
-				fmt.Printf("Extracted text: %s\n", text)
 				result = append(result, text)
 			}
 		} else {
@@ -204,35 +202,4 @@ func ExtractTextFromHTML(htmlContent string) (string, error) {
 
 	// Join all paragraphs with new line characters
 	return strings.Join(result, "\n"), nil
-}
-
-// LoadCharacterMapping loads the character mapping from the specified JSON file
-func LoadCharacterMapping(filePath string) (map[string]string, error) {
-	// Read the JSON file
-	data, err := os.ReadFile(filePath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read mapping file: %w", err)
-	}
-
-	// Parse the JSON data
-	var mapping map[string]string
-	if err := json.Unmarshal(data, &mapping); err != nil {
-		return nil, fmt.Errorf("failed to parse mapping file: %w", err)
-	}
-
-	return mapping, nil
-}
-
-// MapCharacters replaces Unicode escape sequences with their corresponding characters
-func MapCharacters(text string, mapping map[string]string) string {
-	var builder strings.Builder
-	for _, r := range text {
-		ch := string(r)
-		if replacement, ok := mapping[ch]; ok {
-			builder.WriteString(fmt.Sprintf("[%s]", replacement))
-		} else {
-			builder.WriteString(ch)
-		}
-	}
-	return builder.String()
 }
