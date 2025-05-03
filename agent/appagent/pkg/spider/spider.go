@@ -32,6 +32,7 @@ type BasicSpider struct {
 	lastDepth         int
 	queue             *URLQueue
 	visited           map[string]bool
+	visitedSuccess    map[string]bool
 	visitedMutex      sync.RWMutex
 	htmlCallbacks     map[string]func(url string, element string) error
 	responseCallbacks []func(url string, resp *http.Response) error
@@ -50,6 +51,7 @@ func NewBasicSpider() *BasicSpider {
 		maxDepth:          3,
 		queue:             NewURLQueue(),
 		visited:           make(map[string]bool),
+		visitedSuccess:    make(map[string]bool),
 		htmlCallbacks:     make(map[string]func(url string, element string) error),
 		responseCallbacks: []func(url string, resp *http.Response) error{},
 		stopCh:            make(chan struct{}),

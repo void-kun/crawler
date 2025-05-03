@@ -6,11 +6,12 @@ import (
 	"strings"
 
 	"github.com/go-rod/rod"
+	"github.com/zrik/agent/appagent/pkg/spider"
 )
 
 const BOOK_INFO_URL_LENGTH = 8
 
-func (s *Sangtacviet) ExtractBookInfo(url string, page *rod.Page) error {
+func (s *Sangtacviet) ExtractBookInfo(url string, page *rod.Page, hs *spider.HeadSpider) error {
 	paths := strings.Split(url, "/")
 	fmt.Printf("Extracting book info: valid path length %d, current path length %d\n", BOOK_INFO_URL_LENGTH, len(paths))
 	if len(paths) != BOOK_INFO_URL_LENGTH {
@@ -56,7 +57,7 @@ func (s *Sangtacviet) ExtractBookInfo(url string, page *rod.Page) error {
 									}
 									resolve(jsonVal.data);
 								} else {
-									 resolve("error: code not 1");
+									 resolve("error: code is " + jsonVal.code);
 								}
 							} catch(err) {
 								resolve("error: " + err);
@@ -76,19 +77,19 @@ func (s *Sangtacviet) ExtractBookInfo(url string, page *rod.Page) error {
 		`, chapterListUrl).String()
 
 	if strings.HasPrefix(result, "error:") {
-		return fmt.Errorf("failed to extract chapters")
+		return fmt.Errorf("failed to extract book info: %s", result)
 	}
 	SaveTextToFile(result, bookInfo.BookName, "txt")
 
 	chapters, err := ExtractChapterInfoFromData(result, bookInfo.BookUrl)
 	if err != nil {
-		return fmt.Errorf("failed to extract chapters: %w", err)
+		return fmt.Errorf("failed to extract book info: %+v", err)
 	}
 
 	bookInfo.Chapters = chapters
 	bookInfoByte, err := json.Marshal(bookInfo)
 	if err != nil {
-		return fmt.Errorf("failed to marshal book info: %w", err)
+		return fmt.Errorf("failed to marshal book info: %+v", err)
 	}
 	SaveTextToFile(string(bookInfoByte), bookInfo.BookName, "json")
 

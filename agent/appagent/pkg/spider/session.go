@@ -3,7 +3,6 @@ package spider
 import (
 	"encoding/json"
 	"fmt"
-	"net/http"
 	"os"
 	"time"
 
@@ -14,7 +13,6 @@ import (
 // SessionData represents all session-related data from a browser
 type SessionData struct {
 	URL            string                 `json:"url"`
-	Headers        map[string]string      `json:"headers"`
 	Cookies        []*proto.NetworkCookie `json:"cookies"`
 	LocalStorage   map[string]string      `json:"local_storage"`
 	SessionStorage map[string]string      `json:"session_storage"`
@@ -25,7 +23,6 @@ type SessionData struct {
 func NewSessionData(url string) *SessionData {
 	return &SessionData{
 		URL:            url,
-		Headers:        make(map[string]string),
 		Cookies:        []*proto.NetworkCookie{},
 		LocalStorage:   make(map[string]string),
 		SessionStorage: make(map[string]string),
@@ -196,18 +193,4 @@ func ApplySessionDataToPage(page *rod.Page, sessionData *SessionData) error {
 	}
 
 	return nil
-}
-
-// ConvertHeadersToMap converts http.Header to a map[string]string
-func ConvertHeadersToMap(headers http.Header) map[string]string {
-	result := make(map[string]string)
-	for key, values := range headers {
-		result[key] = values[0]
-		if len(values) > 1 {
-			for i := 1; i < len(values); i++ {
-				result[key] += ", " + values[i]
-			}
-		}
-	}
-	return result
 }

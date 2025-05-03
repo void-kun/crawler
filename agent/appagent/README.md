@@ -134,7 +134,6 @@ See the `examples/manual_captcha` directory for a demonstration of captcha handl
 The spider includes a comprehensive session data management system that can:
 
 - Extract and save all session-related data:
-  - HTTP headers
   - Cookies
   - localStorage
   - sessionStorage

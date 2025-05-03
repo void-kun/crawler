@@ -1,6 +1,7 @@
 package sangtacviet
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -9,6 +10,7 @@ import (
 
 	"github.com/go-rod/rod"
 	"github.com/zrik/agent/appagent/internal/source"
+	"golang.org/x/net/html"
 )
 
 func SaveTextToFile(text string, filename, ext string) error {
@@ -134,4 +136,103 @@ func IsStartWithUpper(val string) bool {
 		return false
 	}
 	return val[0] >= 'A' && val[0] <= 'Z'
+}
+
+// ExtractTextFromHTML extracts text content from HTML string, focusing on p tags.
+// All text in p tags will be inlined, and each p tag will add a new line character.
+func ExtractTextFromHTML(htmlContent string) (string, error) {
+	// Create a reader from the HTML content
+	reader := strings.NewReader(htmlContent)
+
+	// Parse the HTML
+	doc, err := html.Parse(reader)
+	if err != nil {
+		return "", fmt.Errorf("failed to parse HTML: %w", err)
+	}
+
+	// Extract text from p tags
+	var result []string
+	var extractText func(*html.Node)
+
+	extractText = func(n *html.Node) {
+		if n.Type == html.ElementNode && n.Data == "p" {
+			// Found a p tag, extract its text content
+			var pText strings.Builder
+
+			// Helper function to extract text from the p tag and its children
+			var extractPTagText func(*html.Node)
+			extractPTagText = func(node *html.Node) {
+				if node.Type == html.TextNode {
+					// Add text node content
+					pText.WriteString(node.Data)
+				} else if node.Type == html.ElementNode && node.Data == "i" {
+					// For i tags, extract their text content
+					for child := node.FirstChild; child != nil; child = child.NextSibling {
+						if child.Type == html.TextNode {
+							pText.WriteString(child.Data)
+						} else {
+							// Recursively process children of i tags
+							extractPTagText(child)
+						}
+					}
+				} else {
+					// Process children for other node types
+					for child := node.FirstChild; child != nil; child = child.NextSibling {
+						extractPTagText(child)
+					}
+				}
+			}
+
+			// Start extracting text from the p tag
+			extractPTagText(n)
+
+			// Add the extracted text to the result if it's not empty
+			if text := strings.TrimSpace(pText.String()); text != "" {
+				fmt.Printf("Extracted text: %s\n", text)
+				result = append(result, text)
+			}
+		} else {
+			// Continue traversing the DOM
+			for c := n.FirstChild; c != nil; c = c.NextSibling {
+				extractText(c)
+			}
+		}
+	}
+
+	// Start the extraction process
+	extractText(doc)
+
+	// Join all paragraphs with new line characters
+	return strings.Join(result, "\n"), nil
+}
+
+// LoadCharacterMapping loads the character mapping from the specified JSON file
+func LoadCharacterMapping(filePath string) (map[string]string, error) {
+	// Read the JSON file
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read mapping file: %w", err)
+	}
+
+	// Parse the JSON data
+	var mapping map[string]string
+	if err := json.Unmarshal(data, &mapping); err != nil {
+		return nil, fmt.Errorf("failed to parse mapping file: %w", err)
+	}
+
+	return mapping, nil
+}
+
+// MapCharacters replaces Unicode escape sequences with their corresponding characters
+func MapCharacters(text string, mapping map[string]string) string {
+	var builder strings.Builder
+	for _, r := range text {
+		ch := string(r)
+		if replacement, ok := mapping[ch]; ok {
+			builder.WriteString(fmt.Sprintf("[%s]", replacement))
+		} else {
+			builder.WriteString(ch)
+		}
+	}
+	return builder.String()
 }

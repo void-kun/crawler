@@ -2,7 +2,6 @@ package sangtacviet
 
 import (
 	"fmt"
-	"os"
 	"time"
 
 	"github.com/go-rod/rod"
@@ -13,8 +12,9 @@ import (
 func (s *Sangtacviet) ExtractSession(browser *rod.Browser, hs *spider.HeadSpider) error {
 	page := browser.MustPage()
 
+	fmt.Printf("credential: %s %s\n", s.username, s.password)
 	fmt.Println("Navigating to website...")
-	err := page.Navigate("https://sangtacviet.app")
+	err := page.Navigate("https://sangtacviet.app/truyen/fanqie/1/7486080399878147134/7487925476573315608")
 	if err != nil {
 		fmt.Printf("Error navigating to website: %v\n", err)
 		return err
@@ -23,7 +23,6 @@ func (s *Sangtacviet) ExtractSession(browser *rod.Browser, hs *spider.HeadSpider
 	err = page.WaitLoad()
 	if err != nil {
 		fmt.Printf("Error waiting for page to load: %v\n", err)
-		return err
 	}
 
 	fmt.Println("Waiting for modals to appear...")
@@ -113,17 +112,6 @@ func (s *Sangtacviet) ExtractSession(browser *rod.Browser, hs *spider.HeadSpider
 		return true;
 	}`)
 
-	fmt.Println("Taking screenshot to debug...")
-	data, err := page.Screenshot(false, nil)
-	if err != nil {
-		fmt.Printf("Error taking screenshot: %v\n", err)
-	} else {
-		err = os.WriteFile("login_debug.png", data, 0o644)
-		if err != nil {
-			fmt.Printf("Error saving screenshot: %v\n", err)
-		}
-	}
-
 	fmt.Println("Waiting for login to complete...")
 	err = page.WaitLoad()
 	if err != nil {
@@ -144,32 +132,6 @@ func (s *Sangtacviet) ExtractSession(browser *rod.Browser, hs *spider.HeadSpider
 		}
 	} else {
 		fmt.Println("No captcha detected, continuing...")
-	}
-
-	fmt.Println("Taking final screenshot...")
-	data, err = page.Screenshot(false, nil)
-	if err != nil {
-		fmt.Printf("Error taking final screenshot: %v\n", err)
-	} else {
-		err = os.WriteFile("final_debug.png", data, 0o644)
-		if err != nil {
-			fmt.Printf("Error saving final screenshot: %v\n", err)
-		}
-	}
-
-	fmt.Println("\nExtracting session data (headers, cookies, localStorage, sessionStorage)...")
-	err = hs.ExtractSessionData(page)
-	if err != nil {
-		fmt.Printf("Error extracting session data: %v\n", err)
-		return err
-	}
-
-	fmt.Println("\nSaving session data to session_data.json...")
-	err = hs.SaveSessionDataToJSON("session_data.json")
-	if err != nil {
-		fmt.Printf("Error saving session data: %v\n", err)
-	} else {
-		fmt.Println("Session data saved successfully!")
 	}
 
 	return nil

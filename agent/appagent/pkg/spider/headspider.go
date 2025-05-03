@@ -24,11 +24,12 @@ type HeadSpider struct {
 	browser           *rod.Browser
 	browserLauncher   *launcher.Launcher
 	prepSteps         []func(*rod.Browser, *HeadSpider) error
-	responseCallbacks []func(url string, page *rod.Page) error
+	responseCallbacks []func(url string, page *rod.Page, hs *HeadSpider) error
 	cookies           []*proto.NetworkCookie
 	isHeadless        bool
 	captchaHandler    CaptchaHandler
 	sessionData       *SessionData
+	sessionFile       string
 }
 
 func (s *HeadSpider) initBrowser() error {
@@ -83,10 +84,10 @@ func (s *HeadSpider) fetch(ctx context.Context, rawURL string) error {
 		return err
 	}
 
+	fmt.Println("requiresHead:", requiresHead)
 	if requiresHead {
 		return s.fetchWithHeadBrowser(ctx, rawURL)
 	}
-
 	return s.BasicSpider.fetch(ctx, rawURL)
 }
 
@@ -122,8 +123,9 @@ func (s *HeadSpider) requiresHeadBrowser(rawURL string) (bool, error) {
 }
 
 func (s *HeadSpider) fetchWithHeadBrowser(ctx context.Context, rawURL string) error {
+	// Create a new page for this fetch operation
 	page := s.browser.MustPage()
-	defer page.MustClose()
+	// defer page.MustClose()
 
 	pageCtx, cancel := context.WithTimeout(ctx, s.browserTimeout)
 	defer cancel()
@@ -168,8 +170,17 @@ func (s *HeadSpider) fetchWithHeadBrowser(ctx context.Context, rawURL string) er
 		s.cookies = pageCookies
 	}
 
+	fmt.Println("Extracting session data...")
+	if err = s.ExtractSessionData(page); err != nil {
+		return err
+	}
+
+	if err = s.SaveSessionDataToJSON(); err != nil {
+		return err
+	}
+
 	for _, callback := range s.responseCallbacks {
-		if err := callback(rawURL, page); err != nil {
+		if err := callback(rawURL, page, s); err != nil {
 			fmt.Println("Error in response callback:", err)
 			return err
 		}
@@ -246,10 +257,14 @@ func (s *HeadSpider) worker(ctx context.Context) {
 
 			s.visitedMutex.Lock()
 			s.visited[queueItem.URL] = true
+			s.visitedSuccess[queueItem.URL] = true
 			s.visitedMutex.Unlock()
 
 			// Call HeadSpider's fetch method instead of BasicSpider's fetch method
 			if err := s.fetch(ctx, queueItem.URL); err != nil {
+				s.visitedMutex.Lock()
+				s.visitedSuccess[queueItem.URL] = false
+				s.visitedMutex.Unlock()
 				continue
 			}
 
@@ -264,6 +279,7 @@ func NewHeadSpider(isHeadless bool, conf *config.Config) *HeadSpider {
 		isHeadless:     isHeadless,
 		captchaHandler: NewManualCaptchaHandler(),
 		proxyURL:       conf.ProxyURL,
+		sessionFile:    conf.SessionFile,
 		BasicSpider: &BasicSpider{
 			client: &http.Client{
 				Timeout: conf.BrowserTimeout * time.Second,
@@ -274,6 +290,7 @@ func NewHeadSpider(isHeadless bool, conf *config.Config) *HeadSpider {
 			maxDepth:          conf.MaxDepth,
 			queue:             NewURLQueue(),
 			visited:           make(map[string]bool),
+			visitedSuccess:    make(map[string]bool),
 			htmlCallbacks:     make(map[string]func(url string, element string) error),
 			responseCallbacks: []func(url string, resp *http.Response) error{},
 			stopCh:            make(chan struct{}),
@@ -302,10 +319,6 @@ func (s *HeadSpider) SetProxy(proxyURL string) {
 	s.proxyURL = proxyURL
 }
 
-func (s *HeadSpider) SetHead(Head bool) {
-	s.isHeadless = Head
-}
-
 func (s *HeadSpider) SetCaptchaHandler(handler CaptchaHandler) {
 	s.captchaHandler = handler
 }
@@ -328,7 +341,8 @@ func (s *HeadSpider) Start(ctx context.Context, seeds []string) error {
 	if err := s.initBrowser(); err != nil {
 		return err
 	}
-	defer s.closeBrowser()
+	// Note: We don't defer s.closeBrowser() here because we want to keep the browser open
+	// for subsequent operations. The caller is responsible for calling Close() when done.
 
 	if err := s.ExecutePrepSteps(); err != nil {
 		return err
@@ -356,10 +370,6 @@ func (s *HeadSpider) AddPrepStep(step func(*rod.Browser, *HeadSpider) error) {
 }
 
 func (s *HeadSpider) ExecutePrepSteps() error {
-	if err := s.initBrowser(); err != nil {
-		return err
-	}
-
 	for _, step := range s.prepSteps {
 		if err := step(s.browser, s); err != nil {
 			return err
@@ -418,17 +428,17 @@ func (s *HeadSpider) GetSessionData() *SessionData {
 }
 
 // SaveSessionDataToJSON saves the current session data to a JSON file
-func (s *HeadSpider) SaveSessionDataToJSON(filePath string) error {
+func (s *HeadSpider) SaveSessionDataToJSON() error {
 	if s.sessionData == nil {
 		return fmt.Errorf("no session data available")
 	}
 
-	return SaveSessionDataToJSON(s.sessionData, filePath)
+	return SaveSessionDataToJSON(s.sessionData, s.sessionFile)
 }
 
 // LoadSessionDataFromJSON loads session data from a JSON file
-func (s *HeadSpider) LoadSessionDataFromJSON(filePath string) error {
-	sessionData, err := LoadSessionDataFromJSON(filePath)
+func (s *HeadSpider) LoadSessionDataFromJSON() error {
+	sessionData, err := LoadSessionDataFromJSON(s.sessionFile)
 	if err != nil {
 		return err
 	}
@@ -448,7 +458,7 @@ func (s *HeadSpider) ApplySessionData(page *rod.Page) error {
 	return ApplySessionDataToPage(page, s.sessionData)
 }
 
-func (s *HeadSpider) OnResponse(callback func(url string, page *rod.Page) error) {
+func (s *HeadSpider) OnResponse(callback func(url string, page *rod.Page, hs *HeadSpider) error) {
 	s.responseCallbacks = append(s.responseCallbacks, callback)
 }
 
@@ -485,6 +495,8 @@ func (s *HeadSpider) StartWithTimeout(ctx context.Context, seeds []string, timeo
 	case <-time.After(timeout):
 		// Force quit workers if timeout occurs
 		s.QuitWorkers()
+		// Close the browser when timing out
+		s.closeBrowser()
 		return fmt.Errorf("spider execution timed out after %v", timeout)
 	}
 }

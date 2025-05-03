@@ -3,13 +3,16 @@ package sangtacviet
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/go-rod/rod"
+	"github.com/go-rod/rod/lib/proto"
+	"github.com/zrik/agent/appagent/pkg/spider"
 )
 
 const CHAPTER_URL_LENGTH = 9
 
-func (s *Sangtacviet) ExtractChapter(url string, page *rod.Page) error {
+func (s *Sangtacviet) ExtractChapter(url string, page *rod.Page, hs *spider.HeadSpider) error {
 	paths := strings.Split(url, "/")
 	fmt.Printf("Extracting chapter: valid path length %d, current path length %d\n", CHAPTER_URL_LENGTH, len(paths))
 	if len(paths) != CHAPTER_URL_LENGTH {
@@ -21,16 +24,18 @@ func (s *Sangtacviet) ExtractChapter(url string, page *rod.Page) error {
 	bookHost := paths[len(paths)-5]
 	bookSty := paths[len(paths)-4]
 
-	chapterUrl := "https://sangtacviet.app/index.php?bookid=%s&h=%s&c=%s&ngmar=readc&sajax=readchapter&sty=%s&exts="
+	chapterUrl := "https://sangtacviet.app/index.php?bookid=%s&c=%s&h=%s&ngmar=readc&sajax=readchapter&sty=%s&exts="
 	chapterUrl = fmt.Sprintf(chapterUrl, bookId, chapterId, bookHost, bookSty)
 	fmt.Println(chapterUrl)
+
 	// Extract chapters
 	result := page.MustEval(`
 		async (url) => {
 		  function chapterApi(url) {
 				return new Promise((resolve, reject) => {
 					const xhr = new XMLHttpRequest();
-    			xhr.open("POST", url, true);
+	  			xhr.open("POST", url, true);
+					xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
 
 					xhr.onload  = function () {
 						if (xhr.status == 200) {
@@ -47,13 +52,13 @@ func (s *Sangtacviet) ExtractChapter(url string, page *rod.Page) error {
 									}
 									resolve(jsonVal.data);
 								} else {
-									 resolve("error: code not 0");
+									 resolve("error: code is " + jsonVal.code);
 								}
 							} catch(err) {
 								resolve("error: " + err);
 							}
 						} else {
-							resolve("error: status not 200"); 
+							resolve("error: status not 200");
 						}
 					}
 
@@ -66,10 +71,40 @@ func (s *Sangtacviet) ExtractChapter(url string, page *rod.Page) error {
 		}
 		`, chapterUrl).String()
 
-	if strings.HasPrefix(result, "error:") {
-		return fmt.Errorf("failed to extract chapters")
-	}
-	SaveTextToFile(result, "name", "txt")
+	if !strings.HasPrefix(result, "error:") {
+		result, _ = ExtractTextFromHTML(result)
 
-	return nil
+		mapping, err := LoadCharacterMapping("examples/letter_mapping.json")
+		if err != nil {
+			return err
+		}
+
+		result = MapCharacters(result, mapping)
+		SaveTextToFile(result, "chapter", "txt")
+		return nil
+	}
+
+	page.Mouse.Click(proto.InputMouseButtonLeft, 1)
+	time.Sleep(3 * time.Second)
+
+	fmt.Println("Waiting for page to load...")
+	page.Activate()
+	page.Reload()
+	page.MustWaitLoad()
+
+	for {
+		page.Mouse.Click(proto.InputMouseButtonLeft, 1)
+		spider.CircleMoveMouse(page)
+
+		contentElements := page.MustElements("div#content-container > div i")
+		fmt.Printf("Extracting chapter: %d\n", len(contentElements))
+		if len(contentElements) > 0 {
+			break
+		}
+		time.Sleep(1 * time.Second)
+	}
+	hs.ExtractSessionData(page)
+	hs.SaveSessionDataToJSON()
+
+	return fmt.Errorf("failed to extract chapter: %s", result)
 }

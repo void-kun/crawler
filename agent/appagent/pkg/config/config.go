@@ -7,8 +7,9 @@ import (
 )
 
 type Stv struct {
-	Username string `mapstructure:"username"`
-	Password string `mapstructure:"password"`
+	Username    string `mapstructure:"username"`
+	Password    string `mapstructure:"password"`
+	MappingFile string `mapstructure:"mapping_file"`
 }
 
 // Config holds the configuration for the spider

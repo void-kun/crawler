@@ -68,10 +68,163 @@
     </mxGraphModel>
   </diagram>
   <diagram id="QNN9B2NaHhB0lrZKfuFr" name="Page-2">
-    <mxGraphModel dx="2046" dy="1199" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+    <mxGraphModel dx="2129" dy="749" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
+        <mxCell id="QRW2aVTyIRTFDNBqgxqH-2" value="Control API" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="-470" y="40" width="80" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="QRW2aVTyIRTFDNBqgxqH-3" value="App agent" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="120" y="40" width="80" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="QRW2aVTyIRTFDNBqgxqH-6" value="" style="endArrow=none;dashed=1;html=1;rounded=0;strokeColor=#A3A3A3;movable=0;resizable=0;rotatable=0;deletable=0;editable=0;locked=1;connectable=0;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="-360" y="760" as="sourcePoint" />
+            <mxPoint x="-360" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="QRW2aVTyIRTFDNBqgxqH-7" value="" style="endArrow=none;dashed=1;html=1;rounded=0;strokeColor=#A3A3A3;movable=0;resizable=0;rotatable=0;deletable=0;editable=0;locked=1;connectable=0;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="80" y="760" as="sourcePoint" />
+            <mxPoint x="80" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="QRW2aVTyIRTFDNBqgxqH-8" value="" style="endArrow=classic;html=1;rounded=0;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="-358" y="120.00000000000003" as="sourcePoint" />
+            <mxPoint x="80" y="120.00000000000003" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="QRW2aVTyIRTFDNBqgxqH-12" value="" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="80" y="110" width="10" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="QRW2aVTyIRTFDNBqgxqH-16" value="" style="endArrow=classic;html=1;rounded=0;exitX=1.347;exitY=0.129;exitDx=0;exitDy=0;exitPerimeter=0;curved=1;dashed=1;dashPattern=8 8;" edge="1" parent="1" source="QRW2aVTyIRTFDNBqgxqH-12">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="180" y="130" as="sourcePoint" />
+            <mxPoint x="91" y="160" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="180" y="130" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="QRW2aVTyIRTFDNBqgxqH-17" value="&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;- Extract session with username/password. And session for chapter page.&lt;/span&gt;&lt;div&gt;&lt;br&gt;&lt;div&gt;&lt;span style=&quot;background-color: transparent;&quot;&gt;&lt;font style=&quot;color: light-dark(rgb(255, 19, 0), rgb(255, 255, 255));&quot;&gt;Need manual verify&lt;/font&gt;&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="160" y="120" width="160" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="QRW2aVTyIRTFDNBqgxqH-19" value="" style="endArrow=classic;html=1;rounded=0;exitX=-0.18;exitY=0.91;exitDx=0;exitDy=0;exitPerimeter=0;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="79.99999999999982" y="201" as="sourcePoint" />
+            <mxPoint x="-358.2" y="200" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="QRW2aVTyIRTFDNBqgxqH-20" value="Initial session data with credential (username/password)" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="-320" y="90" width="380" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="QRW2aVTyIRTFDNBqgxqH-21" value="" style="endArrow=classic;html=1;rounded=0;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="-360" y="440" as="sourcePoint" />
+            <mxPoint x="78" y="440" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="QRW2aVTyIRTFDNBqgxqH-22" value="Push crawl chapter: with chapter url + book info" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="-320" y="410" width="380" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="QRW2aVTyIRTFDNBqgxqH-23" value="" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="80" y="430" width="10" height="190" as="geometry" />
+        </mxCell>
+        <mxCell id="QRW2aVTyIRTFDNBqgxqH-24" value="" style="endArrow=classic;html=1;rounded=0;exitX=1.347;exitY=0.129;exitDx=0;exitDy=0;exitPerimeter=0;curved=1;dashed=1;dashPattern=8 8;" edge="1" parent="1" source="QRW2aVTyIRTFDNBqgxqH-23">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="180" y="450" as="sourcePoint" />
+            <mxPoint x="91" y="480" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="180" y="450" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="QRW2aVTyIRTFDNBqgxqH-25" value="" style="endArrow=classic;html=1;rounded=0;exitX=-0.353;exitY=0.47;exitDx=0;exitDy=0;exitPerimeter=0;" edge="1" parent="1" source="QRW2aVTyIRTFDNBqgxqH-23">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="-340" y="530" as="sourcePoint" />
+            <mxPoint x="-360" y="520" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="QRW2aVTyIRTFDNBqgxqH-26" value="Push chapter data and status success to server" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="-320" y="490" width="380" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="QRW2aVTyIRTFDNBqgxqH-27" value="" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="-370" y="240" width="10" height="160" as="geometry" />
+        </mxCell>
+        <mxCell id="QRW2aVTyIRTFDNBqgxqH-28" value="- Save book info to database&lt;div&gt;- Create task for each chapter and push to message queue&lt;/div&gt;" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="-600" y="260" width="210" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="QRW2aVTyIRTFDNBqgxqH-29" value="&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;- Extract chapter data&lt;/span&gt;" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="150" y="430" width="160" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="QRW2aVTyIRTFDNBqgxqH-30" value="&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;If success, map raw data to struct&amp;nbsp;&lt;/span&gt;" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="100" y="490" width="220" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="QRW2aVTyIRTFDNBqgxqH-31" value="" style="endArrow=classic;html=1;rounded=0;exitX=-0.353;exitY=0.47;exitDx=0;exitDy=0;exitPerimeter=0;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="76" y="579" as="sourcePoint" />
+            <mxPoint x="-360" y="580" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="QRW2aVTyIRTFDNBqgxqH-32" value="Push session data and status failed to server" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="-320" y="550" width="380" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="QRW2aVTyIRTFDNBqgxqH-35" value="" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="-370" y="500" width="10" height="210" as="geometry" />
+        </mxCell>
+        <mxCell id="QRW2aVTyIRTFDNBqgxqH-36" value="- status ==&amp;nbsp; failed:&lt;br&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;save session data. And re send task to queue&lt;br&gt;&lt;div&gt;- status == success:&lt;br&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;save chapter data&amp;nbsp;&lt;br&gt;&lt;/div&gt;" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="-600" y="570" width="210" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="QRW2aVTyIRTFDNBqgxqH-38" value="Push session data to server" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="-320" y="170" width="380" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="QRW2aVTyIRTFDNBqgxqH-39" value="" style="endArrow=classic;html=1;rounded=0;dashed=1;dashPattern=8 8;strokeColor=#858585;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="-358" y="680" as="sourcePoint" />
+            <mxPoint x="80" y="680" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="QRW2aVTyIRTFDNBqgxqH-40" value="Initial session data with credential (username/password)" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;dashed=1;dashPattern=8 8;fontColor=#858585;" vertex="1" parent="1">
+          <mxGeometry x="-320" y="650" width="380" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="QRW2aVTyIRTFDNBqgxqH-41" value="&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;If failed,&amp;nbsp; extract session for chapter page&lt;/span&gt;" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="100" y="550" width="220" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="QRW2aVTyIRTFDNBqgxqH-42" value="" style="endArrow=classic;html=1;rounded=0;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="-358" y="280" as="sourcePoint" />
+            <mxPoint x="80" y="280" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="QRW2aVTyIRTFDNBqgxqH-43" value="" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="80" y="270" width="10" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="QRW2aVTyIRTFDNBqgxqH-44" value="" style="endArrow=classic;html=1;rounded=0;exitX=1.347;exitY=0.129;exitDx=0;exitDy=0;exitPerimeter=0;curved=1;dashed=1;dashPattern=8 8;" edge="1" parent="1" source="QRW2aVTyIRTFDNBqgxqH-43">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="180" y="290" as="sourcePoint" />
+            <mxPoint x="91" y="320" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="180" y="290" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="QRW2aVTyIRTFDNBqgxqH-45" value="&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;- Extract book info data&lt;/span&gt;" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="160" y="280" width="160" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="QRW2aVTyIRTFDNBqgxqH-46" value="" style="endArrow=classic;html=1;rounded=0;exitX=-0.18;exitY=0.91;exitDx=0;exitDy=0;exitPerimeter=0;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="79.99999999999982" y="361" as="sourcePoint" />
+            <mxPoint x="-358.2" y="360" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="QRW2aVTyIRTFDNBqgxqH-47" value="Push craw book info: with book url" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="-320" y="250" width="380" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="QRW2aVTyIRTFDNBqgxqH-48" value="Push book info data to server" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="-320" y="330" width="380" height="30" as="geometry" />
+        </mxCell>
       </root>
     </mxGraphModel>
   </diagram>
