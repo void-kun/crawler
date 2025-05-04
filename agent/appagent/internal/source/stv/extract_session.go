@@ -14,8 +14,8 @@ func (s *Sangtacviet) ExtractSession(url string, page *rod.Page, hs *spider.Head
 	if !strings.HasPrefix(url, hs.SessionPrefix) {
 		return nil
 	}
-
-	fmt.Println("\n====== Extract session ======")
+	fmt.Println("\n==================================================================================")
+	fmt.Println("====== Extract session")
 	page.Mouse.Click(proto.InputMouseButtonLeft, 1)
 	time.Sleep(3 * time.Second)
 
@@ -23,13 +23,6 @@ func (s *Sangtacviet) ExtractSession(url string, page *rod.Page, hs *spider.Head
 	page.Reload()
 	page.MustWaitLoad()
 
-	for {
-		contentElements := page.MustElements("div#content-container > div i")
-		if len(contentElements) > 0 {
-			break
-		}
-		time.Sleep(5 * time.Second)
-	}
 	fmt.Println("\n==================================================")
 	fmt.Println("CHOOSE ONE CHAPTER TO EXTRACT SESSION DATA")
 	fmt.Println("==================================================")
@@ -38,5 +31,6 @@ func (s *Sangtacviet) ExtractSession(url string, page *rod.Page, hs *spider.Head
 
 	hs.ExtractSessionData(page)
 	hs.SaveSessionDataToJSON()
+	fmt.Println("====== Session data saved")
 	return nil
 }

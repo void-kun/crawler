@@ -10,8 +10,13 @@ import (
 )
 
 func (s *Sangtacviet) ExtractBookInfo(url string, page *rod.Page, hs *spider.HeadSpider) error {
+	if strings.HasPrefix(url, hs.SessionPrefix) {
+		return nil
+	}
+
 	paths := strings.Split(url, "/")
-	fmt.Printf("Extracting book info: valid path length %d, current path length %d\n", BOOK_INFO_URL_LENGTH, len(paths))
+	fmt.Println("\n==================================================================================")
+	fmt.Printf("====== Extracting book info: valid path length %d, current path length %d\n", BOOK_INFO_URL_LENGTH, len(paths))
 	if len(paths) != BOOK_INFO_URL_LENGTH {
 		return nil
 	}

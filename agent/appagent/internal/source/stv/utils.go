@@ -1,10 +1,10 @@
 package sangtacviet
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 
 	"github.com/go-rod/rod"
@@ -100,26 +100,7 @@ func ExtractChapterInfoFromData(data, bookUrl string) ([]source.Chapter, error) 
 			chapter.ChapterId = idParts[0]
 
 			// Extract ChapterName and ChapterIndex
-			titleParts := strings.Split(strings.Trim(parts[1], " "), " ")
-			if len(titleParts) < 2 {
-				continue
-			}
-
-			partIndex := 0
-			_, err := strconv.Atoi(titleParts[partIndex])
-			if err != nil {
-				partIndex += 1
-				_, _ = strconv.Atoi(titleParts[partIndex])
-			}
-
-			title := strings.TrimSpace(strings.Join(titleParts[partIndex+1:], " "))
-			title = strings.Trim(title, " ")
-			title = strings.TrimLeft(title, "Thứ")
-			title = strings.TrimLeft(title, "thứ")
-			title = strings.TrimLeft(title, "chương")
-			title = strings.TrimLeft(title, "hồi")
-			title = strings.Trim(title, " ")
-			title = strings.Replace(title, "-/-unvip", "", -1)
+			title := strings.Trim(parts[1], " ")
 			chapter.ChapterName = title
 
 			chapter.ChapterUrl = fmt.Sprintf("%s%s", bookUrl, chapter.ChapterId)
@@ -140,66 +121,35 @@ func IsStartWithUpper(val string) bool {
 // ExtractTextFromHTML extracts text content from HTML string, focusing on p tags.
 // All text in p tags will be inlined, and each p tag will add a new line character.
 func ExtractTextFromHTML(htmlContent string) (string, error) {
-	// Create a reader from the HTML content
-	reader := strings.NewReader(htmlContent)
-
-	// Parse the HTML
-	doc, err := html.Parse(reader)
+	doc, err := html.Parse(strings.NewReader(htmlContent))
 	if err != nil {
-		return "", fmt.Errorf("failed to parse HTML: %w", err)
+		panic(err)
 	}
 
-	// Extract text from p tags
-	var result []string
-	var extractText func(*html.Node)
+	var buf bytes.Buffer
+	var extract func(*html.Node)
 
-	extractText = func(n *html.Node) {
-		if n.Type == html.ElementNode && n.Data == "p" {
-			// Found a p tag, extract its text content
-			var pText strings.Builder
+	extract = func(n *html.Node) {
+		if n.Type == html.TextNode {
+			buf.WriteString(strings.Trim(n.Data, "\t"))
+		}
 
-			// Helper function to extract text from the p tag and its children
-			var extractPTagText func(*html.Node)
-			extractPTagText = func(node *html.Node) {
-				if node.Type == html.TextNode {
-					// Add text node content
-					pText.WriteString(node.Data)
-				} else if node.Type == html.ElementNode && node.Data == "i" {
-					// For i tags, extract their text content
-					for child := node.FirstChild; child != nil; child = child.NextSibling {
-						if child.Type == html.TextNode {
-							pText.WriteString(child.Data)
-						} else {
-							// Recursively process children of i tags
-							extractPTagText(child)
-						}
-					}
-				} else {
-					// Process children for other node types
-					for child := node.FirstChild; child != nil; child = child.NextSibling {
-						extractPTagText(child)
-					}
+		if n.Type == html.ElementNode {
+			if n.Data == "p" && n.FirstChild != nil {
+				for c := n.FirstChild; c != nil; c = c.NextSibling {
+					extract(c)
 				}
+				buf.WriteString("\n") // newline sau mỗi thẻ <p>
+				return
 			}
+		}
 
-			// Start extracting text from the p tag
-			extractPTagText(n)
-
-			// Add the extracted text to the result if it's not empty
-			if text := strings.TrimSpace(pText.String()); text != "" {
-				result = append(result, text)
-			}
-		} else {
-			// Continue traversing the DOM
-			for c := n.FirstChild; c != nil; c = c.NextSibling {
-				extractText(c)
-			}
+		for c := n.FirstChild; c != nil; c = c.NextSibling {
+			extract(c)
 		}
 	}
 
-	// Start the extraction process
-	extractText(doc)
-
-	// Join all paragraphs with new line characters
-	return strings.Join(result, "\n"), nil
+	extract(doc)
+	result := strings.ReplaceAll(buf.String(), "\n\n", "\n")
+	return result, nil
 }

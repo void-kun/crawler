@@ -123,18 +123,17 @@ func (s *HeadSpider) requiresHeadBrowser(rawURL string) (bool, error) {
 }
 
 func (s *HeadSpider) fetchWithHeadBrowser(ctx context.Context, rawURL string) error {
+	pageUrl := rawURL
 	if strings.HasPrefix(rawURL, s.SessionPrefix) {
 		s.SetHeadless(false)
+		pageUrl = rawURL[len(s.SessionPrefix):]
 	} else {
-		if s.isHeadless {
+		if !s.isHeadless {
 			s.SetHeadless(true)
 		}
 	}
 
-	// Create a new page for this fetch operation
 	page := s.browser.MustPage()
-	defer page.MustClose()
-
 	defer func() {
 		if r := recover(); r != nil {
 			fmt.Println("Recovered from panic:", r)
@@ -145,7 +144,7 @@ func (s *HeadSpider) fetchWithHeadBrowser(ctx context.Context, rawURL string) er
 	defer cancel()
 
 	if len(s.cookies) > 0 {
-		parsedURL, err := url.Parse(rawURL)
+		parsedURL, err := url.Parse(pageUrl)
 		if err != nil {
 			return err
 		}
@@ -167,7 +166,7 @@ func (s *HeadSpider) fetchWithHeadBrowser(ctx context.Context, rawURL string) er
 		}
 	}
 
-	if err := page.Context(pageCtx).Navigate(rawURL); err != nil {
+	if err := page.Context(pageCtx).Navigate(pageUrl); err != nil {
 		return err
 	}
 
@@ -351,20 +350,13 @@ func (s *HeadSpider) HandleCaptcha(page *rod.Page) error {
 	return nil
 }
 
-func (s *HeadSpider) Start(ctx context.Context, seeds []string) error {
+func (s *HeadSpider) Start(ctx context.Context) error {
 	if err := s.initBrowser(); err != nil {
 		return err
 	}
 
 	if err := s.ExecutePrepSteps(); err != nil {
 		return err
-	}
-
-	// Add seed URLs to the queue
-	for _, seed := range seeds {
-		if err := s.AddURL(seed); err != nil {
-			return err
-		}
 	}
 
 	// Start workers using HeadSpider's worker method
@@ -501,7 +493,7 @@ func (s *HeadSpider) IsIdle() bool {
 }
 
 // Start with timeout to prevent hanging
-func (s *HeadSpider) StartWithTimeout(ctx context.Context, seeds []string, timeout time.Duration) error {
+func (s *HeadSpider) StartWithTimeout(ctx context.Context, timeout time.Duration) error {
 	// Create a context with timeout
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
@@ -509,7 +501,7 @@ func (s *HeadSpider) StartWithTimeout(ctx context.Context, seeds []string, timeo
 	// Start the spider in a goroutine
 	errCh := make(chan error, 1)
 	go func() {
-		errCh <- s.Start(ctx, seeds)
+		errCh <- s.Start(ctx)
 	}()
 
 	// Wait for either completion or timeout

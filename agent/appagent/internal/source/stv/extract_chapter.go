@@ -9,8 +9,13 @@ import (
 )
 
 func (s *Sangtacviet) ExtractChapter(url string, page *rod.Page, hs *spider.HeadSpider) error {
+	if strings.HasPrefix(url, hs.SessionPrefix) {
+		return nil
+	}
+
 	paths := strings.Split(url, "/")
-	fmt.Printf("Extracting chapter: valid path length %d, current path length %d\n", CHAPTER_URL_LENGTH, len(paths))
+	fmt.Println("\n==================================================================================")
+	fmt.Printf("======= Extracting chapter: valid path length %d, current path length %d\n", CHAPTER_URL_LENGTH, len(paths))
 	if len(paths) != CHAPTER_URL_LENGTH {
 		return nil
 	}

@@ -83,6 +83,10 @@ func (s *BasicSpider) Stop() {
 }
 
 func (s *BasicSpider) AddURL(rawURL string) error {
+	if rawURL[len(rawURL)-1] != '/' {
+		rawURL = rawURL + "/"
+	}
+
 	parsedURL, err := url.Parse(rawURL)
 	if err != nil {
 		return err
