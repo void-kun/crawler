@@ -1,8 +1,7 @@
-package sangtacviet
+package stv
 
 import (
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/go-rod/rod"
@@ -10,12 +9,14 @@ import (
 	"github.com/zrik/agent/appagent/pkg/spider"
 )
 
-func (s *Sangtacviet) ExtractSession(url string, page *rod.Page, hs *spider.HeadSpider) error {
-	if !strings.HasPrefix(url, hs.SessionPrefix) {
-		return nil
+func (s *Sangtacviet) ExtractSession(url string, page *rod.Page, spider spider.TaskSpider) error {
+	hs, err := AsHeadSpider(spider)
+	if err != nil {
+		return fmt.Errorf("spider is not of type *spider.HeadSpider")
 	}
-	fmt.Println("\n==================================================================================")
-	fmt.Println("====== Extract session")
+
+	fmt.Println("==================================================================================")
+	fmt.Println("=============================== Extracting session ===============================")
 	page.Mouse.Click(proto.InputMouseButtonLeft, 1)
 	time.Sleep(3 * time.Second)
 
@@ -23,7 +24,8 @@ func (s *Sangtacviet) ExtractSession(url string, page *rod.Page, hs *spider.Head
 	page.Reload()
 	page.MustWaitLoad()
 
-	fmt.Println("\n==================================================")
+	fmt.Println()
+	fmt.Println("==================================================")
 	fmt.Println("CHOOSE ONE CHAPTER TO EXTRACT SESSION DATA")
 	fmt.Println("==================================================")
 
@@ -31,6 +33,5 @@ func (s *Sangtacviet) ExtractSession(url string, page *rod.Page, hs *spider.Head
 
 	hs.ExtractSessionData(page)
 	hs.SaveSessionDataToJSON()
-	fmt.Println("====== Session data saved")
 	return nil
 }

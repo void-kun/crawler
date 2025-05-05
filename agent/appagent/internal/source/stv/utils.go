@@ -1,16 +1,26 @@
-package sangtacviet
+package stv
 
 import (
 	"bytes"
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/go-rod/rod"
 	"github.com/zrik/agent/appagent/internal/source"
+	"github.com/zrik/agent/appagent/pkg/spider"
 	"golang.org/x/net/html"
 )
+
+func AsHeadSpider(s spider.TaskSpider) (*spider.HeadSpider, error) {
+	hs, ok := s.(*spider.HeadSpider)
+	if !ok {
+		return nil, fmt.Errorf("not a *HeadSpider")
+	}
+	return hs, nil
+}
 
 func SaveTextToFile(text string, filename, ext string) error {
 	// Create output directory if it doesn't exist
@@ -36,7 +46,7 @@ func SaveHTMLToFile(chapterContainer *rod.Element, filename, ext string) error {
 	}
 
 	SaveTextToFile(htmlContent, filename, ext)
-	fmt.Printf("HTML content from div#chaptercontainer saved")
+	log.Printf("HTML content from div#chaptercontainer saved")
 	return nil
 }
 

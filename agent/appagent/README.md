@@ -13,6 +13,7 @@ A flexible web crawler for both normal and secure websites, written in Go.
 - Configurable concurrency, delay, and depth
 - Save crawled data to files
 - Command-line interface for easy use
+- RabbitMQ integration for distributed task processing
 
 ## Requirements
 
@@ -144,6 +145,43 @@ The spider includes a comprehensive session data management system that can:
 
 See the `examples/session_reuse` directory for a demonstration of session data reuse.
 
+## RabbitMQ Integration
+
+The spider engine includes RabbitMQ integration for distributed task processing. This allows you to:
+
+- Receive tasks from RabbitMQ queues
+- Process tasks based on their topic
+- Prioritize specific types of tasks
+- Distribute crawling tasks across multiple instances
+
+### Running the RabbitMQ Worker
+
+```bash
+# Build the worker
+make build-worker
+
+# Run the worker
+make run-worker
+```
+
+### Publishing Tasks
+
+```bash
+# Build the publisher
+make build-publisher
+
+# Publish a session task
+make run-publisher-session URL="https://sangtacviet.app/truyen/12345"
+
+# Publish a book task
+make run-publisher-book URL="https://sangtacviet.app/truyen/12345" BOOK_ID="12345" BOOK_HOST="sangtacviet"
+
+# Publish a chapter task
+make run-publisher-chapter URL="https://sangtacviet.app/truyen/12345/67890" BOOK_ID="12345" CHAPTER_ID="67890" BOOK_HOST="sangtacviet" BOOK_STY="truyen"
+```
+
+See the [RabbitMQ Integration README](pkg/rabbitmq/README.md) for more details.
+
 ## TODO
 
 - Improve HTML parsing and link extraction for the basic spider
@@ -154,6 +192,7 @@ See the `examples/session_reuse` directory for a demonstration of session data r
 - Implement more sophisticated detection of websites requiring headless browsing
 - Add automated captcha solving options (OCR, captcha solving services)
 - Improve language selection for international websites
+- Enhance RabbitMQ integration with more task types and better error handling
 
 ## License
 

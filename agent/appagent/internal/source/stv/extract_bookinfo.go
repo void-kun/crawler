@@ -1,4 +1,4 @@
-package sangtacviet
+package stv
 
 import (
 	"encoding/json"
@@ -9,18 +9,13 @@ import (
 	"github.com/zrik/agent/appagent/pkg/spider"
 )
 
-func (s *Sangtacviet) ExtractBookInfo(url string, page *rod.Page, hs *spider.HeadSpider) error {
-	if strings.HasPrefix(url, hs.SessionPrefix) {
-		return nil
+func (s *Sangtacviet) ExtractBookInfo(url string, page *rod.Page, spider spider.TaskSpider) error {
+	_, err := AsHeadSpider(spider)
+	if err != nil {
+		return fmt.Errorf("spider is not of type *spider.HeadSpider")
 	}
 
 	paths := strings.Split(url, "/")
-	fmt.Println("\n==================================================================================")
-	fmt.Printf("====== Extracting book info: valid path length %d, current path length %d\n", BOOK_INFO_URL_LENGTH, len(paths))
-	if len(paths) != BOOK_INFO_URL_LENGTH {
-		return nil
-	}
-
 	bookInfo, err := ExtractBookInfoFromElement(page)
 	if err != nil {
 		return fmt.Errorf("failed to extract book info: %w", err)
@@ -30,9 +25,7 @@ func (s *Sangtacviet) ExtractBookInfo(url string, page *rod.Page, hs *spider.Hea
 	bookInfo.BookId = paths[len(paths)-2]
 	bookInfo.BookHost = paths[len(paths)-4]
 
-	chapterListUrl := "https://sangtacviet.app/index.php?ngmar=chapterlist&h=%s&bookid=%s&sajax=getchapterlist"
-	chapterListUrl = fmt.Sprintf(chapterListUrl, bookInfo.BookHost, bookInfo.BookId)
-	fmt.Println(chapterListUrl)
+	chapterListUrl := fmt.Sprintf("%s/index.php?ngmar=chapterlist&h=%s&bookid=%s&sajax=getchapterlist", s.origin, bookInfo.BookHost, bookInfo.BookId)
 	// Extract chapters
 	result := page.MustEval(`
 		async (url) => {

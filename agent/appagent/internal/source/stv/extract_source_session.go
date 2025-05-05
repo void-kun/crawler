@@ -1,7 +1,8 @@
-package sangtacviet
+package stv
 
 import (
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/go-rod/rod"
@@ -9,19 +10,24 @@ import (
 	"github.com/zrik/agent/appagent/pkg/spider"
 )
 
-func (s *Sangtacviet) ExtractSourceSession(browser *rod.Browser, hs *spider.HeadSpider) error {
-	page := browser.MustPage()
-
-	fmt.Println("\n====== Extract source session ======")
-	err := page.Navigate("https://sangtacviet.app/")
+func (s *Sangtacviet) ExtractSourceSession(browser *rod.Browser, hsType spider.TaskSpider) error {
+	_, err := AsHeadSpider(hsType)
 	if err != nil {
-		fmt.Printf("Error navigating to website: %v\n", err)
+		return fmt.Errorf("spider is not of type *spider.HeadSpider")
+	}
+
+	page := browser.MustPage()
+	fmt.Println()
+	fmt.Println("=============================== Extract source session ===============================")
+	err = page.Navigate(s.origin)
+	if err != nil {
+		log.Printf("Error navigating to website: %v\n", err)
 		return err
 	}
 
 	err = page.WaitLoad()
 	if err != nil {
-		fmt.Printf("Error waiting for page to load: %v\n", err)
+		log.Printf("Error waiting for page to load: %v\n", err)
 	}
 
 	time.Sleep(1 * time.Second)
@@ -34,17 +40,17 @@ func (s *Sangtacviet) ExtractSourceSession(browser *rod.Browser, hs *spider.Head
 	if err == nil {
 		err = vietnameseOption.Click(proto.InputMouseButtonLeft, 1)
 		if err != nil {
-			fmt.Printf("Error clicking Vietnamese option: %v\n", err)
+			log.Printf("Error clicking Vietnamese option: %v\n", err)
 		} else {
 			time.Sleep(1 * time.Second)
 
 			err = page.WaitLoad()
 			if err != nil {
-				fmt.Printf("Error waiting for page to load after language selection: %v\n", err)
+				log.Printf("Error waiting for page to load after language selection: %v\n", err)
 			}
 		}
 	} else {
-		fmt.Println("Vietnamese language option not found, continuing...")
+		log.Println("Vietnamese language option not found, continuing...")
 	}
 
 	page.MustEval(`() => {
@@ -58,23 +64,23 @@ func (s *Sangtacviet) ExtractSourceSession(browser *rod.Browser, hs *spider.Head
 
 	loginForm, err := page.Element("form")
 	if err != nil {
-		fmt.Println("No form found on the page, trying to find inputs directly...")
+		log.Println("No form found on the page, trying to find inputs directly...")
 	} else {
-		fmt.Println("Form found on the page")
+		log.Println("Form found on the page")
 	}
 
 	usernameInput, err := loginForm.Element("input[name*='user']")
 	if err != nil {
 		usernameInput, err = page.Element("input[name*='user']")
 		if err != nil {
-			fmt.Printf("Username field not found: %v\n", err)
+			log.Printf("Username field not found: %v\n", err)
 			return err
 		}
 	}
 
 	err = usernameInput.Input(s.username)
 	if err != nil {
-		fmt.Printf("Error entering username: %v\n", err)
+		log.Printf("Error entering username: %v\n", err)
 		return err
 	}
 
@@ -82,14 +88,14 @@ func (s *Sangtacviet) ExtractSourceSession(browser *rod.Browser, hs *spider.Head
 	if err != nil {
 		passwordInput, err = page.Element("input[type='password']")
 		if err != nil {
-			fmt.Printf("Password field not found: %v\n", err)
+			log.Printf("Password field not found: %v\n", err)
 			return err
 		}
 	}
 
 	err = passwordInput.Input(s.password)
 	if err != nil {
-		fmt.Printf("Error entering password: %v\n", err)
+		log.Printf("Error entering password: %v\n", err)
 		return err
 	}
 
@@ -100,7 +106,7 @@ func (s *Sangtacviet) ExtractSourceSession(browser *rod.Browser, hs *spider.Head
 
 	err = page.WaitLoad()
 	if err != nil {
-		fmt.Printf("Error waiting for login to complete: %v\n", err)
+		log.Printf("Error waiting for login to complete: %v\n", err)
 		return err
 	}
 
@@ -110,11 +116,11 @@ func (s *Sangtacviet) ExtractSourceSession(browser *rod.Browser, hs *spider.Head
 
 		err = handler.HandleCaptcha(page)
 		if err != nil {
-			fmt.Printf("Error handling captcha: %v\n", err)
+			log.Printf("Error handling captcha: %v\n", err)
 			return err
 		}
 	} else {
-		fmt.Println("No captcha detected, continuing...")
+		log.Println("No captcha detected, continuing...")
 	}
 
 	return nil

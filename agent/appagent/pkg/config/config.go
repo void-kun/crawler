@@ -7,9 +7,21 @@ import (
 )
 
 type Stv struct {
-	Username    string `mapstructure:"username"`
-	Password    string `mapstructure:"password"`
-	MappingFile string `mapstructure:"mapping_file"`
+	Username string `mapstructure:"username"`
+	Password string `mapstructure:"password"`
+	Origin   string `mapstructure:"origin"`
+}
+
+// RabbitMQConfig holds the configuration for RabbitMQ
+type RabbitMQConfig struct {
+	URL               string        `mapstructure:"url"`
+	QueueName         string        `mapstructure:"queue_name"`
+	ExchangeName      string        `mapstructure:"exchange_name"`
+	ExchangeType      string        `mapstructure:"exchange_type"`
+	RoutingKeys       []string      `mapstructure:"routing_keys"`
+	PriorityTopic     string        `mapstructure:"priority_topic"`
+	PrefetchCount     int           `mapstructure:"prefetch_count"`
+	ReconnectInterval time.Duration `mapstructure:"reconnect_interval"`
 }
 
 // Config holds the configuration for the spider
@@ -26,12 +38,14 @@ type Config struct {
 	ProxyURL       string        `mapstructure:"proxy_url"`
 
 	// Storage settings
-	OutputDir     string `mapstructure:"output_dir"`
-	SessionFile   string `mapstructure:"session_file"`
-	SessionPrefix string `mapstructure:"session_prefix"`
+	OutputDir   string `mapstructure:"output_dir"`
+	SessionFile string `mapstructure:"session_file"`
 
 	// Source-specific settings
 	Stv Stv `mapstructure:"stv"`
+
+	// RabbitMQ settings
+	RabbitMQ RabbitMQConfig `mapstructure:"rabbitmq"`
 }
 
 // LoadConfigFromFile loads configuration from a specific file path

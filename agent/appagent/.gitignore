@@ -1,3 +1,10 @@
-examples/
+# dev config
+.vscode/
 
+examples/
+output/
+bin/
+
+# secret config
 config.yaml
+session_data.json

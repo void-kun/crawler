@@ -3,6 +3,7 @@ package spider
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
 	"time"
 
@@ -42,7 +43,7 @@ func ExtractSessionData(page *rod.Page) (*SessionData, error) {
 	if err == nil {
 		sessionData.Cookies = cookies
 	} else {
-		fmt.Printf("Error extracting cookies: %v\n", err)
+		log.Printf("Error extracting cookies: %v\n", err)
 	}
 
 	// Extract localStorage
@@ -50,7 +51,7 @@ func ExtractSessionData(page *rod.Page) (*SessionData, error) {
 	if err == nil {
 		sessionData.LocalStorage = localStorage
 	} else {
-		fmt.Printf("Error extracting localStorage: %v\n", err)
+		log.Printf("Error extracting localStorage: %v\n", err)
 	}
 
 	// Extract sessionStorage
@@ -58,7 +59,7 @@ func ExtractSessionData(page *rod.Page) (*SessionData, error) {
 	if err == nil {
 		sessionData.SessionStorage = sessionStorage
 	} else {
-		fmt.Printf("Error extracting sessionStorage: %v\n", err)
+		log.Printf("Error extracting sessionStorage: %v\n", err)
 	}
 
 	return sessionData, nil

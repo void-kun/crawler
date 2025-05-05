@@ -1,4 +1,4 @@
-package sangtacviet
+package stv
 
 import (
 	"fmt"
@@ -8,27 +8,19 @@ import (
 	"github.com/zrik/agent/appagent/pkg/spider"
 )
 
-func (s *Sangtacviet) ExtractChapter(url string, page *rod.Page, hs *spider.HeadSpider) error {
-	if strings.HasPrefix(url, hs.SessionPrefix) {
-		return nil
+func (s *Sangtacviet) ExtractChapter(url string, page *rod.Page, spider spider.TaskSpider) error {
+	_, err := AsHeadSpider(spider)
+	if err != nil {
+		return fmt.Errorf("spider is not of type *spider.HeadSpider")
 	}
 
 	paths := strings.Split(url, "/")
-	fmt.Println("\n==================================================================================")
-	fmt.Printf("======= Extracting chapter: valid path length %d, current path length %d\n", CHAPTER_URL_LENGTH, len(paths))
-	if len(paths) != CHAPTER_URL_LENGTH {
-		return nil
-	}
-
 	bookId := paths[len(paths)-3]
 	chapterId := paths[len(paths)-2]
 	bookHost := paths[len(paths)-5]
 	bookSty := paths[len(paths)-4]
 
-	chapterUrl := "https://sangtacviet.app/index.php?bookid=%s&c=%s&h=%s&ngmar=readc&sajax=readchapter&sty=%s&exts="
-	chapterUrl = fmt.Sprintf(chapterUrl, bookId, chapterId, bookHost, bookSty)
-	fmt.Println(chapterUrl)
-
+	chapterUrl := fmt.Sprintf("%s/index.php?bookid=%s&c=%s&h=%s&ngmar=readc&sajax=readchapter&sty=%s&exts=", s.origin, bookId, chapterId, bookHost, bookSty)
 	// Extract chapters
 	result := page.MustEval(`
 		async (url) => {
@@ -76,7 +68,6 @@ func (s *Sangtacviet) ExtractChapter(url string, page *rod.Page, hs *spider.Head
 		result, _ = ExtractTextFromHTML(result)
 
 		SaveTextToFile(result, fmt.Sprintf("%s_%s", bookId, chapterId), "txt")
-		fmt.Println("====== Chapter extracted")
 		return nil
 	}
 
