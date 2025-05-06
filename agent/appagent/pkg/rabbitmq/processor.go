@@ -9,6 +9,7 @@ import (
 
 	"github.com/zrik/agent/appagent/internal/source"
 	"github.com/zrik/agent/appagent/pkg/config"
+	http "github.com/zrik/agent/appagent/pkg/http"
 	"github.com/zrik/agent/appagent/pkg/spider"
 )
 
@@ -27,14 +28,22 @@ type Processor struct {
 	priorityTask   chan Task
 	normalTask     chan Task
 	taskProcessors map[string]TaskProcessor
+	httpService    *http.Service
 }
 
 // TaskProcessor is a function that processes a specific task
-type TaskProcessor func(task any, sourceClient source.WebSource, spider spider.TaskSpider) error
+type TaskProcessor func(task any, sourceClient source.WebSource, spider spider.TaskSpider) (any, error)
 
 // NewProcessor creates a new task processor
 func NewProcessor(service *Service, cfg *config.Config, spider *spider.HeadSpider) *Processor {
 	ctx, cancel := context.WithCancel(context.Background())
+
+	// Create HTTP service if control API is configured
+	var httpService *http.Service
+	if cfg.ControlAPI.BaseURL != "" {
+		httpService = http.NewService(&cfg.ControlAPI)
+	}
+
 	return &Processor{
 		service:        service,
 		config:         cfg,
@@ -45,6 +54,7 @@ func NewProcessor(service *Service, cfg *config.Config, spider *spider.HeadSpide
 		priorityTask:   make(chan Task, 10),
 		normalTask:     make(chan Task, 100),
 		taskProcessors: make(map[string]TaskProcessor),
+		httpService:    httpService,
 	}
 }
 
@@ -119,8 +129,68 @@ func (p *Processor) processTask(task Task) {
 		return
 	}
 
+	// Extract task info for reporting
+	var url string
+	var httpTaskType http.TaskType
+	var httpSourceType http.SourceType
+
+	// Convert task type and source to HTTP types
+	switch taskType {
+	case TaskTypeBook:
+		httpTaskType = http.TaskTypeBook
+	case TaskTypeChapter:
+		httpTaskType = http.TaskTypeChapter
+	case TaskTypeSession:
+		httpTaskType = http.TaskTypeSession
+	}
+
+	switch source {
+	case SourceTypeSangTacViet:
+		httpSourceType = http.SourceTypeSangTacViet
+	case SourceTypeWikiDich:
+		httpSourceType = http.SourceTypeWikiDich
+	case SourceTypeMetruyenchu:
+		httpSourceType = http.SourceTypeMetruyenchu
+	}
+
+	// Get URL from task
+	switch v := parsedTask.(type) {
+	case BookTask:
+		url = v.BookURL
+	case ChapterTask:
+		url = v.ChapterURL
+	case SessionTask:
+		url = v.URL
+	}
+
+	// Generate task ID for reporting
+	taskID := ""
+	if p.httpService != nil && p.httpService.IsReportingEnabled() {
+		taskID = http.GenerateTaskID(httpTaskType, httpSourceType, url)
+	}
+
 	// Process the task
-	if err := processor(parsedTask, sourceClient, p.spider); err != nil {
+	data, err := processor(parsedTask, sourceClient, p.spider)
+
+	// Report task result if control API is configured
+	if p.httpService != nil && p.httpService.IsReportingEnabled() {
+		taskResultSvc := p.httpService.GetTaskResultService()
+		ctx := context.Background()
+
+		if err != nil {
+			// Report error
+			if reportErr := taskResultSvc.ReportTaskError(ctx, taskID, httpTaskType, httpSourceType, url, err); reportErr != nil {
+				log.Printf("Error reporting task error: %v", reportErr)
+			}
+			log.Printf("Error processing task: %v", err)
+			return
+		}
+
+		// Report success
+		if reportErr := taskResultSvc.ReportTaskSuccess(ctx, taskID, httpTaskType, httpSourceType, url, data); reportErr != nil {
+			log.Printf("Error reporting task success: %v", reportErr)
+		}
+	} else if err != nil {
 		log.Printf("Error processing task: %v", err)
 		return
 	}
@@ -157,61 +227,61 @@ func (p *Processor) Stop() {
 }
 
 func (p *Processor) RegisterDefaultTaskProcessors() {
-	p.RegisterTaskProcessor(TaskTypeBook, func(task any, sourceClient source.WebSource, spider spider.TaskSpider) error {
+	p.RegisterTaskProcessor(TaskTypeBook, func(task any, sourceClient source.WebSource, spider spider.TaskSpider) (any, error) {
 		bookTask, ok := task.(BookTask)
 		if !ok {
-			return fmt.Errorf("invalid task type, expected BookTask")
+			return nil, fmt.Errorf("invalid task type, expected BookTask")
 		}
 
 		log.Printf("Processing book task: %+v", bookTask)
 
 		// Process the book URL using the spider
-		err := spider.ProcessPageWithCallback(bookTask.BookURL, sourceClient.ExtractBookInfo)
+		data, err := spider.ProcessPageWithCallback(bookTask.BookURL, sourceClient.ExtractBookInfo)
 		if err != nil {
-			return fmt.Errorf("error processing book task: %w", err)
+			return nil, fmt.Errorf("error processing book task: %w", err)
 		}
 
 		log.Printf("Successfully processed book task: %+v", bookTask)
-		return nil
+		return data, nil
 	})
 
 	// Register chapter task processor
-	p.RegisterTaskProcessor(TaskTypeChapter, func(task interface{}, sourceClient source.WebSource, spider spider.TaskSpider) error {
+	p.RegisterTaskProcessor(TaskTypeChapter, func(task interface{}, sourceClient source.WebSource, spider spider.TaskSpider) (any, error) {
 		chapterTask, ok := task.(ChapterTask)
 		if !ok {
-			return fmt.Errorf("invalid task type, expected ChapterTask")
+			return nil, fmt.Errorf("invalid task type, expected ChapterTask")
 		}
 
 		log.Printf("Processing chapter task: %+v", chapterTask)
 
 		// Process the chapter URL using the spider
-		err := spider.ProcessPageWithCallback(chapterTask.ChapterURL, sourceClient.ExtractChapter)
+		data, err := spider.ProcessPageWithCallback(chapterTask.ChapterURL, sourceClient.ExtractChapter)
 		if err != nil {
-			return fmt.Errorf("error processing chapter task: %w", err)
+			return nil, fmt.Errorf("error processing chapter task: %w", err)
 		}
 
 		log.Printf("Successfully processed chapter task: %+v", chapterTask)
-		return nil
+		return data, nil
 	})
 
 	// Register session task processor
-	p.RegisterTaskProcessor(TaskTypeSession, func(task interface{}, sourceClient source.WebSource, spider spider.TaskSpider) error {
+	p.RegisterTaskProcessor(TaskTypeSession, func(task interface{}, sourceClient source.WebSource, spider spider.TaskSpider) (any, error) {
 		sessionTask, ok := task.(SessionTask)
 		if !ok {
-			return fmt.Errorf("invalid task type, expected SessionTask")
+			return nil, fmt.Errorf("invalid task type, expected SessionTask")
 		}
 
 		log.Printf("Processing session task: %+v", sessionTask)
 
 		p.spider.SetHeadless(false)
 		// Process the session URL using the spider
-		err := spider.ProcessPageWithCallback(sessionTask.URL, sourceClient.ExtractSession)
+		data, err := spider.ProcessPageWithCallback(sessionTask.URL, sourceClient.ExtractSession)
 		if err != nil {
-			return fmt.Errorf("error processing session task: %w", err)
+			return nil, fmt.Errorf("error processing session task: %w", err)
 		}
 
 		p.spider.SetHeadless(true)
 		log.Printf("Successfully processed session task: %+v", sessionTask)
-		return nil
+		return data, nil
 	})
 }

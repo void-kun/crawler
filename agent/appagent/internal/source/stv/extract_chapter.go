@@ -8,10 +8,10 @@ import (
 	"github.com/zrik/agent/appagent/pkg/spider"
 )
 
-func (s *Sangtacviet) ExtractChapter(url string, page *rod.Page, spider spider.TaskSpider) error {
+func (s *Sangtacviet) ExtractChapter(url string, page *rod.Page, spider spider.TaskSpider) (any, error) {
 	_, err := AsHeadSpider(spider)
 	if err != nil {
-		return fmt.Errorf("spider is not of type *spider.HeadSpider")
+		return nil, fmt.Errorf("spider is not of type *spider.HeadSpider")
 	}
 
 	paths := strings.Split(url, "/")
@@ -66,10 +66,8 @@ func (s *Sangtacviet) ExtractChapter(url string, page *rod.Page, spider spider.T
 
 	if !strings.HasPrefix(result, "error:") {
 		result, _ = ExtractTextFromHTML(result)
-
-		SaveTextToFile(result, fmt.Sprintf("%s_%s", bookId, chapterId), "txt")
-		return nil
+		return result, nil
 	}
 
-	return fmt.Errorf("failed to extract chapter: %s", result)
+	return nil, fmt.Errorf("failed to extract chapter: %s", result)
 }

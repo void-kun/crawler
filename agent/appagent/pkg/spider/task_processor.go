@@ -59,22 +59,22 @@ func (s *HeadSpider) ProcessSessionURL(url string) error {
 }
 
 // ProcessPageWithCallback processes a page with a callback function
-func (s *HeadSpider) ProcessPageWithCallback(url string, callback func(url string, page *rod.Page, spider TaskSpider) error) error {
+func (s *HeadSpider) ProcessPageWithCallback(url string, callback func(url string, page *rod.Page, spider TaskSpider) (any, error)) (any, error) {
 	// Create a new page
 	page, err := s.CreatePage()
 	if err != nil {
-		return fmt.Errorf("error creating page: %w", err)
+		return nil, fmt.Errorf("error creating page: %w", err)
 	}
 	defer page.Close()
 
 	// Navigate to the URL
 	if err := page.Navigate(url); err != nil {
-		return fmt.Errorf("error navigating to URL: %w", err)
+		return nil, fmt.Errorf("error navigating to URL: %w", err)
 	}
 
 	// Wait for page to load
 	if err := page.WaitLoad(); err != nil {
-		return fmt.Errorf("error waiting for page to load: %w", err)
+		return nil, fmt.Errorf("error waiting for page to load: %w", err)
 	}
 
 	// Apply session data
@@ -87,8 +87,9 @@ func (s *HeadSpider) ProcessPageWithCallback(url string, callback func(url strin
 	}
 
 	// Call the callback function
-	if err := callback(url, page, s); err != nil {
-		return fmt.Errorf("error in callback: %w", err)
+	var data any
+	if data, err = callback(url, page, s); err != nil {
+		return nil, fmt.Errorf("error in callback: %w", err)
 	}
 
 	// Extract session data
@@ -101,5 +102,5 @@ func (s *HeadSpider) ProcessPageWithCallback(url string, callback func(url strin
 		log.Printf("Warning: Failed to save session data: %v", err)
 	}
 
-	return nil
+	return data, nil
 }

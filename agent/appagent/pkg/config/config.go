@@ -24,6 +24,15 @@ type RabbitMQConfig struct {
 	ReconnectInterval time.Duration `mapstructure:"reconnect_interval"`
 }
 
+// ControlAPIConfig holds the configuration for the control API
+type ControlAPIConfig struct {
+	BaseURL         string        `mapstructure:"base_url"`
+	Timeout         time.Duration `mapstructure:"timeout"`
+	APIKey          string        `mapstructure:"api_key"`
+	ReportResults   bool          `mapstructure:"report_results"`
+	ResultsEndpoint string        `mapstructure:"results_endpoint"`
+}
+
 // Config holds the configuration for the spider
 type Config struct {
 	// General settings
@@ -46,6 +55,9 @@ type Config struct {
 
 	// RabbitMQ settings
 	RabbitMQ RabbitMQConfig `mapstructure:"rabbitmq"`
+
+	// Control API settings
+	ControlAPI ControlAPIConfig `mapstructure:"control_api"`
 }
 
 // LoadConfigFromFile loads configuration from a specific file path

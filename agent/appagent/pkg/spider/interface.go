@@ -35,5 +35,5 @@ type TaskSpider interface {
 	ProcessBookURL(bookURL string, bookID string, bookHost string) error
 	ProcessChapterURL(chapterURL string, bookID string, chapterID string, bookHost string, bookSty string) error
 	ProcessSessionURL(url string) error
-	ProcessPageWithCallback(url string, callback func(url string, page *rod.Page, spider TaskSpider) error) error
+	ProcessPageWithCallback(url string, callback func(url string, page *rod.Page, spider TaskSpider) (any, error)) (any, error)
 }

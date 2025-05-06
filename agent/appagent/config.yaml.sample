@@ -12,6 +12,7 @@ session_file: "./session_data.json"
 stv:
   username:
   password:
+  origin: https://sangtacviet.app
 
 # RabbitMQ configuration
 rabbitmq:
@@ -26,3 +27,11 @@ rabbitmq:
   priority_topic: "crawl.sangtacviet.session"
   prefetch_count: 1
   reconnect_interval: 5 # seconds
+
+# Control API configuration
+control_api:
+  base_url: "http://localhost:8080"
+  timeout: 30 # seconds
+  api_key: ""
+  report_results: true
+  results_endpoint: "/api/task-results"

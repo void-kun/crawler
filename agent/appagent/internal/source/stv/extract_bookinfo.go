@@ -9,16 +9,16 @@ import (
 	"github.com/zrik/agent/appagent/pkg/spider"
 )
 
-func (s *Sangtacviet) ExtractBookInfo(url string, page *rod.Page, spider spider.TaskSpider) error {
+func (s *Sangtacviet) ExtractBookInfo(url string, page *rod.Page, spider spider.TaskSpider) (any, error) {
 	_, err := AsHeadSpider(spider)
 	if err != nil {
-		return fmt.Errorf("spider is not of type *spider.HeadSpider")
+		return nil, fmt.Errorf("spider is not of type *spider.HeadSpider")
 	}
 
 	paths := strings.Split(url, "/")
 	bookInfo, err := ExtractBookInfoFromElement(page)
 	if err != nil {
-		return fmt.Errorf("failed to extract book info: %w", err)
+		return nil, fmt.Errorf("failed to extract book info: %w", err)
 	}
 
 	bookInfo.BookUrl = url
@@ -73,21 +73,19 @@ func (s *Sangtacviet) ExtractBookInfo(url string, page *rod.Page, spider spider.
 		`, chapterListUrl).String()
 
 	if strings.HasPrefix(result, "error:") {
-		return fmt.Errorf("failed to extract book info: %s", result)
+		return nil, fmt.Errorf("failed to extract book info: %s", result)
 	}
-	SaveTextToFile(result, bookInfo.BookName, "txt")
 
 	chapters, err := ExtractChapterInfoFromData(result, bookInfo.BookUrl)
 	if err != nil {
-		return fmt.Errorf("failed to extract book info: %+v", err)
+		return nil, fmt.Errorf("failed to extract book info: %+v", err)
 	}
 
 	bookInfo.Chapters = chapters
 	bookInfoByte, err := json.Marshal(bookInfo)
 	if err != nil {
-		return fmt.Errorf("failed to marshal book info: %+v", err)
+		return nil, fmt.Errorf("failed to marshal book info: %+v", err)
 	}
-	SaveTextToFile(string(bookInfoByte), bookInfo.BookName, "json")
 
-	return nil
+	return bookInfoByte, nil
 }

@@ -10,6 +10,7 @@ import (
 
 	"github.com/zrik/agent/appagent/internal/source"
 	"github.com/zrik/agent/appagent/pkg/config"
+	http "github.com/zrik/agent/appagent/pkg/http"
 	"github.com/zrik/agent/appagent/pkg/spider"
 )
 
@@ -20,12 +21,20 @@ type AppService struct {
 	spider        *spider.HeadSpider
 	sourceClients map[SourceType]source.WebSource
 	processor     *Processor
+	httpService   *http.Service
 }
 
 // NewAppService creates a new application service
 func NewAppService(cfg *config.Config) *AppService {
 	// Create RabbitMQ service
 	rabbitMQ := NewService(&cfg.RabbitMQ)
+
+	// Create HTTP service if control API is configured
+	var httpService *http.Service
+	if cfg.ControlAPI.BaseURL != "" {
+		httpService = http.NewService(&cfg.ControlAPI)
+		log.Printf("Control API enabled at %s", cfg.ControlAPI.BaseURL)
+	}
 
 	// Create spider
 	spiderInstance := spider.NewHeadSpider(true, cfg)
@@ -42,6 +51,7 @@ func NewAppService(cfg *config.Config) *AppService {
 		spider:        spiderInstance,
 		sourceClients: make(map[SourceType]source.WebSource),
 		processor:     processor,
+		httpService:   httpService,
 	}
 }
 

@@ -9,10 +9,10 @@ import (
 	"github.com/zrik/agent/appagent/pkg/spider"
 )
 
-func (s *Sangtacviet) ExtractSession(url string, page *rod.Page, spider spider.TaskSpider) error {
+func (s *Sangtacviet) ExtractSession(url string, page *rod.Page, spider spider.TaskSpider) (any, error) {
 	hs, err := AsHeadSpider(spider)
 	if err != nil {
-		return fmt.Errorf("spider is not of type *spider.HeadSpider")
+		return nil, fmt.Errorf("spider is not of type *spider.HeadSpider")
 	}
 
 	fmt.Println("==================================================================================")
@@ -33,5 +33,5 @@ func (s *Sangtacviet) ExtractSession(url string, page *rod.Page, spider spider.T
 
 	hs.ExtractSessionData(page)
 	hs.SaveSessionDataToJSON()
-	return nil
+	return nil, nil
 }

@@ -10,19 +10,18 @@ import (
 	"github.com/zrik/agent/appagent/pkg/spider"
 )
 
-func (s *Sangtacviet) ExtractSourceSession(browser *rod.Browser, hsType spider.TaskSpider) error {
+func (s *Sangtacviet) ExtractSourceSession(browser *rod.Browser, hsType spider.TaskSpider) (any, error) {
 	_, err := AsHeadSpider(hsType)
 	if err != nil {
-		return fmt.Errorf("spider is not of type *spider.HeadSpider")
+		return nil, fmt.Errorf("spider is not of type *spider.HeadSpider")
 	}
 
 	page := browser.MustPage()
-	fmt.Println()
 	fmt.Println("=============================== Extract source session ===============================")
 	err = page.Navigate(s.origin)
 	if err != nil {
 		log.Printf("Error navigating to website: %v\n", err)
-		return err
+		return nil, err
 	}
 
 	err = page.WaitLoad()
@@ -33,7 +32,7 @@ func (s *Sangtacviet) ExtractSourceSession(browser *rod.Browser, hsType spider.T
 	time.Sleep(1 * time.Second)
 	languageModal, err := page.Element(".modal-content:has(.seloption[value='vi'])")
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	vietnameseOption, err := languageModal.Element(".seloption[value='vi']")
@@ -74,14 +73,14 @@ func (s *Sangtacviet) ExtractSourceSession(browser *rod.Browser, hsType spider.T
 		usernameInput, err = page.Element("input[name*='user']")
 		if err != nil {
 			log.Printf("Username field not found: %v\n", err)
-			return err
+			return nil, err
 		}
 	}
 
 	err = usernameInput.Input(s.username)
 	if err != nil {
 		log.Printf("Error entering username: %v\n", err)
-		return err
+		return nil, err
 	}
 
 	passwordInput, err := loginForm.Element("input[type='password']")
@@ -89,14 +88,14 @@ func (s *Sangtacviet) ExtractSourceSession(browser *rod.Browser, hsType spider.T
 		passwordInput, err = page.Element("input[type='password']")
 		if err != nil {
 			log.Printf("Password field not found: %v\n", err)
-			return err
+			return nil, err
 		}
 	}
 
 	err = passwordInput.Input(s.password)
 	if err != nil {
 		log.Printf("Error entering password: %v\n", err)
-		return err
+		return nil, err
 	}
 
 	page.MustEval(`async () => {
@@ -107,7 +106,7 @@ func (s *Sangtacviet) ExtractSourceSession(browser *rod.Browser, hsType spider.T
 	err = page.WaitLoad()
 	if err != nil {
 		log.Printf("Error waiting for login to complete: %v\n", err)
-		return err
+		return nil, err
 	}
 
 	if spider.DetectCaptcha(page) {
@@ -117,11 +116,11 @@ func (s *Sangtacviet) ExtractSourceSession(browser *rod.Browser, hsType spider.T
 		err = handler.HandleCaptcha(page)
 		if err != nil {
 			log.Printf("Error handling captcha: %v\n", err)
-			return err
+			return nil, err
 		}
 	} else {
 		log.Println("No captcha detected, continuing...")
 	}
 
-	return nil
+	return nil, nil
 }
