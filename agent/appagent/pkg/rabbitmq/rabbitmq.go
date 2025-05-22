@@ -5,11 +5,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"time"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 	"github.com/zrik/agent/appagent/pkg/config"
+	"github.com/zrik/agent/appagent/pkg/logger"
 )
 
 // Service represents a RabbitMQ service
@@ -121,7 +121,7 @@ func (s *Service) Connect() error {
 	// Handle connection close
 	go func() {
 		<-closeChan
-		log.Println("RabbitMQ connection closed, attempting to reconnect...")
+		logger.Info().Msg("RabbitMQ connection closed, attempting to reconnect...")
 		s.reconnect()
 	}()
 
@@ -138,10 +138,10 @@ func (s *Service) reconnect() {
 			time.Sleep(s.config.ReconnectInterval * time.Second)
 			err := s.Connect()
 			if err != nil {
-				log.Printf("Failed to reconnect to RabbitMQ: %v", err)
+				logger.Error().Err(err).Msg("Failed to reconnect to RabbitMQ")
 				continue
 			}
-			log.Println("Successfully reconnected to RabbitMQ")
+			logger.Info().Msg("Successfully reconnected to RabbitMQ")
 
 			// Start consuming again
 			go s.startConsuming()
@@ -170,7 +170,7 @@ func (s *Service) startConsuming() error {
 			var task Task
 			err := json.Unmarshal(d.Body, &task)
 			if err != nil {
-				log.Printf("Error parsing message: %v", err)
+				logger.Error().Err(err).Msg("Error parsing message")
 				d.Nack(false, false) // Reject the message without requeuing
 				continue
 			}

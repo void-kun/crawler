@@ -53,20 +53,20 @@ type TaskResult struct {
 	CompletedAt time.Time        `json:"completed_at"`
 }
 
-// TaskResultService handles task result reporting
-type TaskResultService struct {
+// TaskService handles task result reporting
+type TaskService struct {
 	client *Client
 }
 
 // NewTaskResultService creates a new task result service
-func NewTaskResultService(client *Client) *TaskResultService {
-	return &TaskResultService{
+func NewTaskResultService(client *Client) *TaskService {
+	return &TaskService{
 		client: client,
 	}
 }
 
 // ReportTaskResult reports a task result to the control API
-func (s *TaskResultService) ReportTaskResult(ctx context.Context, result *TaskResult) error {
+func (s *TaskService) ReportTaskResult(ctx context.Context, result *TaskResult) error {
 	// Set the completion time if not already set
 	if result.CompletedAt.IsZero() {
 		result.CompletedAt = time.Now()
@@ -89,7 +89,7 @@ func (s *TaskResultService) ReportTaskResult(ctx context.Context, result *TaskRe
 }
 
 // ReportTaskSuccess reports a successful task result
-func (s *TaskResultService) ReportTaskSuccess(ctx context.Context, taskID string, taskType TaskType, source SourceType, url string, data interface{}) error {
+func (s *TaskService) ReportTaskSuccess(ctx context.Context, taskID string, taskType TaskType, source SourceType, url string, data interface{}) error {
 	result := &TaskResult{
 		TaskID:      taskID,
 		TaskType:    taskType,
@@ -105,7 +105,7 @@ func (s *TaskResultService) ReportTaskSuccess(ctx context.Context, taskID string
 }
 
 // ReportTaskError reports a failed task result
-func (s *TaskResultService) ReportTaskError(ctx context.Context, taskID string, taskType TaskType, source SourceType, url string, err error) error {
+func (s *TaskService) ReportTaskError(ctx context.Context, taskID string, taskType TaskType, source SourceType, url string, err error) error {
 	result := &TaskResult{
 		TaskID:      taskID,
 		TaskType:    taskType,
@@ -118,6 +118,8 @@ func (s *TaskResultService) ReportTaskError(ctx context.Context, taskID string, 
 
 	return s.ReportTaskResult(ctx, result)
 }
+
+func (s *TaskService) CreateTask(ctx context.Context)
 
 // GenerateTaskID generates a task ID from a task URL and type
 func GenerateTaskID(taskType TaskType, source SourceType, url string) string {

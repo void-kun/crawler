@@ -1,0 +1,48 @@
+# Server configuration
+server:
+  port: 8080
+  read_timeout: 15  # seconds
+  write_timeout: 15 # seconds
+  idle_timeout: 60  # seconds
+
+# Database configuration
+database:
+  host: localhost
+  port: 5432
+  user: postgres
+  password: postgres
+  name: crawler
+  sslmode: disable
+
+# Authentication configuration
+auth:
+  enabled: true
+  token_expiry: 720 # hours (30 days)
+
+# Logging configuration
+logging:
+  level: info      # debug, info, warn, error
+  format: text     # text or json
+  output: console  # console, file, or both
+  file_path: logs/app.log
+  max_size: 10     # maximum size in MB before rotation
+  max_backups: 5   # maximum number of old log files to retain
+  max_age: 30      # maximum number of days to retain old log files
+  compress: true   # compress rotated files
+
+# RabbitMQ configuration
+rabbitmq:
+  url: "amqp://guest:guest@localhost:5672/"
+  queue_name: "crawler_tasks"
+  exchange_name: "crawler_exchange"
+  exchange_type: "topic"
+  routing_keys:
+    - "crawl.sangtacviet.book"
+    - "crawl.sangtacviet.chapter"
+    - "crawl.sangtacviet.session"
+    - "crawl.wikidich.book"
+    - "crawl.wikidich.chapter"
+    - "crawl.metruyenchu.book"
+    - "crawl.metruyenchu.chapter"
+  prefetch_count: 1
+  reconnect_interval: 5 # seconds

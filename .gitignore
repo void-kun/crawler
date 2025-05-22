@@ -1,2 +1,11 @@
-cosplaytele/venv/
-cosplaytele/src/__pycache__
+# dev config
+.vscode/
+
+examples/
+output/
+build/
+bin/
+
+# secret config
+config.yaml
+session_data.json

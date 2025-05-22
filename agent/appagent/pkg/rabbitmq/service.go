@@ -2,7 +2,6 @@ package rabbitmq
 
 import (
 	"context"
-	"log"
 	"os"
 	"os/signal"
 	"syscall"
@@ -11,6 +10,7 @@ import (
 	"github.com/zrik/agent/appagent/internal/source"
 	"github.com/zrik/agent/appagent/pkg/config"
 	http "github.com/zrik/agent/appagent/pkg/http"
+	"github.com/zrik/agent/appagent/pkg/logger"
 	"github.com/zrik/agent/appagent/pkg/spider"
 )
 
@@ -33,7 +33,7 @@ func NewAppService(cfg *config.Config) *AppService {
 	var httpService *http.Service
 	if cfg.ControlAPI.BaseURL != "" {
 		httpService = http.NewService(&cfg.ControlAPI)
-		log.Printf("Control API enabled at %s", cfg.ControlAPI.BaseURL)
+		logger.Info().Str("baseURL", cfg.ControlAPI.BaseURL).Msg("Control API enabled")
 	}
 
 	// Create spider
@@ -63,7 +63,7 @@ func (s *AppService) RegisterSourceClient(sourceType SourceType, client source.W
 
 // Start starts the application service
 func (s *AppService) Start() error {
-	log.Println("Starting application service...")
+	logger.Info().Msg("Starting application service...")
 	// Start RabbitMQ service
 	if err := s.rabbitMQ.Start(); err != nil {
 		return err
@@ -78,7 +78,7 @@ func (s *AppService) Start() error {
 	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
 
 	<-sigCh
-	log.Println("Received shutdown signal, gracefully shutting down...")
+	logger.Info().Msg("Received shutdown signal, gracefully shutting down...")
 
 	// Stop processor
 	s.processor.Stop()
@@ -88,7 +88,7 @@ func (s *AppService) Start() error {
 	defer cancel()
 
 	if err := s.rabbitMQ.Close(); err != nil {
-		log.Printf("Error closing RabbitMQ connection: %v", err)
+		logger.Error().Err(err).Msg("Error closing RabbitMQ connection")
 	}
 
 	// Wait for context to be done
@@ -104,6 +104,10 @@ func (s *AppService) Stop() {
 
 	// Close RabbitMQ connection
 	if err := s.rabbitMQ.Close(); err != nil {
-		log.Printf("Error closing RabbitMQ connection: %v", err)
+		logger.Error().Err(err).Msg("Error closing RabbitMQ connection")
 	}
+}
+
+func (s *AppService) GetHTTPService() *http.Service {
+	return s.httpService
 }

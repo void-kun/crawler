@@ -26,11 +26,25 @@ type RabbitMQConfig struct {
 
 // ControlAPIConfig holds the configuration for the control API
 type ControlAPIConfig struct {
-	BaseURL         string        `mapstructure:"base_url"`
-	Timeout         time.Duration `mapstructure:"timeout"`
-	APIKey          string        `mapstructure:"api_key"`
-	ReportResults   bool          `mapstructure:"report_results"`
-	ResultsEndpoint string        `mapstructure:"results_endpoint"`
+	BaseURL                string        `mapstructure:"base_url"`
+	Timeout                time.Duration `mapstructure:"timeout"`
+	APIKey                 string        `mapstructure:"api_key"`
+	AgentName              string        `mapstructure:"agent_name"`
+	IPAddress              string        `mapstructure:"ip_address"`
+	AgentHeartbeatInterval time.Duration `mapstructure:"agent_heartbeat_interval"`
+	ReportResults          bool          `mapstructure:"report_results"`
+	ResultsEndpoint        string        `mapstructure:"results_endpoint"`
+}
+
+// LoggerConfig holds the configuration for the logger
+type LoggerConfig struct {
+	Level      string `mapstructure:"level"`
+	Output     string `mapstructure:"output"`
+	FilePath   string `mapstructure:"file_path"`
+	MaxSize    int    `mapstructure:"max_size"`
+	MaxBackups int    `mapstructure:"max_backups"`
+	MaxAge     int    `mapstructure:"max_age"`
+	Compress   bool   `mapstructure:"compress"`
 }
 
 // Config holds the configuration for the spider
@@ -58,6 +72,9 @@ type Config struct {
 
 	// Control API settings
 	ControlAPI ControlAPIConfig `mapstructure:"control_api"`
+
+	// Logger settings
+	Logger LoggerConfig `mapstructure:"logger"`
 }
 
 // LoadConfigFromFile loads configuration from a specific file path

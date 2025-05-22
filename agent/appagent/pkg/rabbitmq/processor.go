@@ -3,13 +3,13 @@ package rabbitmq
 import (
 	"context"
 	"fmt"
-	"log"
 	"sync"
 	"time"
 
 	"github.com/zrik/agent/appagent/internal/source"
 	"github.com/zrik/agent/appagent/pkg/config"
 	http "github.com/zrik/agent/appagent/pkg/http"
+	"github.com/zrik/agent/appagent/pkg/logger"
 	"github.com/zrik/agent/appagent/pkg/spider"
 )
 
@@ -100,32 +100,42 @@ func (p *Processor) processTasksFromQueue() {
 	}
 }
 
+func (p *Processor) checkAgentActive() (bool, error) {
+	return p.httpService.GetAgentService().IsActive(context.Background(), p.httpService.GetAgent().ID.String())
+}
+
 // processTask processes a single task
 func (p *Processor) processTask(task Task) {
+	isActive, err := p.checkAgentActive()
+	if err != nil || !isActive {
+		logger.Warn().Msg("Agent is not active, skipping task")
+		return
+	}
+
 	source, taskType, err := ParseTopicInfo(task.Topic)
 	if err != nil {
-		log.Printf("Error parsing topic: %v", err)
+		logger.Error().Err(err).Str("topic", task.Topic).Msg("Error parsing topic")
 		return
 	}
 
 	// Get the source client
 	sourceClient, ok := p.sourceClients[source]
 	if !ok {
-		log.Printf("No source client registered for source: %s", source)
+		logger.Error().Str("source", string(source)).Msg("No source client registered for source")
 		return
 	}
 
 	// Parse the task
 	parsedTask, err := ParseTask(task)
 	if err != nil {
-		log.Printf("Error parsing task: %v", err)
+		logger.Error().Err(err).Str("topic", task.Topic).Msg("Error parsing task")
 		return
 	}
 
 	// Get the task processor
 	processor, ok := p.taskProcessors[string(taskType)]
 	if !ok {
-		log.Printf("No task processor registered for task type: %s", taskType)
+		logger.Error().Str("taskType", string(taskType)).Msg("No task processor registered for task type")
 		return
 	}
 
@@ -180,18 +190,18 @@ func (p *Processor) processTask(task Task) {
 		if err != nil {
 			// Report error
 			if reportErr := taskResultSvc.ReportTaskError(ctx, taskID, httpTaskType, httpSourceType, url, err); reportErr != nil {
-				log.Printf("Error reporting task error: %v", reportErr)
+				logger.Error().Err(reportErr).Str("taskID", taskID).Msg("Error reporting task error")
 			}
-			log.Printf("Error processing task: %v", err)
+			logger.Error().Err(err).Str("taskID", taskID).Str("url", url).Msg("Error processing task")
 			return
 		}
 
 		// Report success
 		if reportErr := taskResultSvc.ReportTaskSuccess(ctx, taskID, httpTaskType, httpSourceType, url, data); reportErr != nil {
-			log.Printf("Error reporting task success: %v", reportErr)
+			logger.Error().Err(reportErr).Str("taskID", taskID).Msg("Error reporting task success")
 		}
 	} else if err != nil {
-		log.Printf("Error processing task: %v", err)
+		logger.Error().Err(err).Str("url", url).Msg("Error processing task")
 		return
 	}
 }
@@ -233,7 +243,7 @@ func (p *Processor) RegisterDefaultTaskProcessors() {
 			return nil, fmt.Errorf("invalid task type, expected BookTask")
 		}
 
-		log.Printf("Processing book task: %+v", bookTask)
+		logger.Info().Interface("task", bookTask).Msg("Processing book task")
 
 		// Process the book URL using the spider
 		data, err := spider.ProcessPageWithCallback(bookTask.BookURL, sourceClient.ExtractBookInfo)
@@ -241,7 +251,7 @@ func (p *Processor) RegisterDefaultTaskProcessors() {
 			return nil, fmt.Errorf("error processing book task: %w", err)
 		}
 
-		log.Printf("Successfully processed book task: %+v", bookTask)
+		logger.Info().Interface("task", bookTask).Msg("Successfully processed book task")
 		return data, nil
 	})
 
@@ -252,7 +262,7 @@ func (p *Processor) RegisterDefaultTaskProcessors() {
 			return nil, fmt.Errorf("invalid task type, expected ChapterTask")
 		}
 
-		log.Printf("Processing chapter task: %+v", chapterTask)
+		logger.Info().Interface("task", chapterTask).Msg("Processing chapter task")
 
 		// Process the chapter URL using the spider
 		data, err := spider.ProcessPageWithCallback(chapterTask.ChapterURL, sourceClient.ExtractChapter)
@@ -260,7 +270,7 @@ func (p *Processor) RegisterDefaultTaskProcessors() {
 			return nil, fmt.Errorf("error processing chapter task: %w", err)
 		}
 
-		log.Printf("Successfully processed chapter task: %+v", chapterTask)
+		logger.Info().Interface("task", chapterTask).Msg("Successfully processed chapter task")
 		return data, nil
 	})
 
@@ -271,7 +281,7 @@ func (p *Processor) RegisterDefaultTaskProcessors() {
 			return nil, fmt.Errorf("invalid task type, expected SessionTask")
 		}
 
-		log.Printf("Processing session task: %+v", sessionTask)
+		logger.Info().Interface("task", sessionTask).Msg("Processing session task")
 
 		p.spider.SetHeadless(false)
 		// Process the session URL using the spider
@@ -281,7 +291,7 @@ func (p *Processor) RegisterDefaultTaskProcessors() {
 		}
 
 		p.spider.SetHeadless(true)
-		log.Printf("Successfully processed session task: %+v", sessionTask)
+		logger.Info().Interface("task", sessionTask).Msg("Successfully processed session task")
 		return data, nil
 	})
 }
