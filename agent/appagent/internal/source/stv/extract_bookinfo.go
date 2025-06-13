@@ -1,7 +1,6 @@
 package stv
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -14,6 +13,8 @@ func (s *Sangtacviet) ExtractBookInfo(url string, page *rod.Page, spider spider.
 	if err != nil {
 		return nil, fmt.Errorf("spider is not of type *spider.HeadSpider")
 	}
+
+	defer page.MustClose()
 
 	paths := strings.Split(url, "/")
 	bookInfo, err := ExtractBookInfoFromElement(page)
@@ -31,6 +32,11 @@ func (s *Sangtacviet) ExtractBookInfo(url string, page *rod.Page, spider spider.
 		async (url) => {
 		  function chapterListApi(url) {
 				return new Promise((resolve, reject) => {
+					// Set cookies before sending the request
+					const hstamp = Math.floor(Date.now() / 1000);
+					document.cookie = 'hstamp=' + hstamp + '; path=/';
+					document.cookie = 'lang=vi; path=/';
+
 					const xhr = new XMLHttpRequest();
     			xhr.open("GET", url, true);
 
@@ -82,7 +88,7 @@ func (s *Sangtacviet) ExtractBookInfo(url string, page *rod.Page, spider spider.
 	}
 
 	bookInfo.Chapters = chapters
-	bookInfoByte, err := json.Marshal(bookInfo)
+	bookInfoByte, err := ConvertToRawMessage(bookInfo)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal book info: %+v", err)
 	}

@@ -15,6 +15,20 @@ func (s *Sangtacviet) ExtractSession(url string, page *rod.Page, spider spider.T
 		return nil, fmt.Errorf("spider is not of type *spider.HeadSpider")
 	}
 
+	defer page.MustClose()
+
+	spider.ApplySessionData(page)
+	page.MustReload().MustWaitLoad()
+
+	_ = page.MustEval(`
+		() => {
+			// Set cookies before sending the request
+			const hstamp = Math.floor(Date.now() / 1000);
+			document.cookie = 'hstamp=' + hstamp + '; path=/';
+			document.cookie = 'lang=vi; path=/';
+		}
+	`)
+
 	fmt.Println("==================================================================================")
 	fmt.Println("=============================== Extracting session ===============================")
 	page.Mouse.Click(proto.InputMouseButtonLeft, 1)
@@ -33,5 +47,7 @@ func (s *Sangtacviet) ExtractSession(url string, page *rod.Page, spider spider.T
 
 	hs.ExtractSessionData(page)
 	hs.SaveSessionDataToJSON()
-	return nil, nil
+
+	result, _ := ConvertToRawMessage(nil)
+	return result, nil
 }

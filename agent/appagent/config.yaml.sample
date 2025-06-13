@@ -9,10 +9,6 @@ browser_timeout: 120
 proxy_url: ""
 output_dir: "./output"
 session_file: "./session_data.json"
-stv:
-  username:
-  password:
-  origin: https://sangtacviet.app
 
 # Logger configuration
 logger:
@@ -44,7 +40,6 @@ control_api:
   timeout: 30 # seconds
   api_key: ""
   report_results: true
-  results_endpoint: "/api/task-results"
   agent_name: "App agent"
   ip_address: "192.168.100.217"
-  agent_heartbeat_interval: ""
+  agent_heartbeat_interval: 5

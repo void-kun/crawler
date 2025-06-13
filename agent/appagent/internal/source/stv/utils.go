@@ -2,10 +2,13 @@ package stv
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
 	"path/filepath"
+	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/go-rod/rod"
@@ -112,8 +115,8 @@ func ExtractChapterInfoFromData(data, bookUrl string) ([]source.Chapter, error) 
 			// Extract ChapterName and ChapterIndex
 			title := strings.Trim(parts[1], " ")
 			chapter.ChapterName = title
-
-			chapter.ChapterUrl = fmt.Sprintf("%s%s", bookUrl, chapter.ChapterId)
+			chapter.ChapterNumber = ExtractFirstNumber(title)
+			chapter.ChapterUrl = fmt.Sprintf("%s%s/", bookUrl, chapter.ChapterId)
 			chapters = append(chapters, chapter)
 		}
 	}
@@ -126,6 +129,19 @@ func IsStartWithUpper(val string) bool {
 		return false
 	}
 	return val[0] >= 'A' && val[0] <= 'Z'
+}
+
+func ExtractFirstNumber(val string) int {
+	re := regexp.MustCompile(`\d+`)
+	match := re.FindString(val)
+	if match == "" {
+		return 0
+	}
+	num, err := strconv.Atoi(match)
+	if err != nil {
+		return 0
+	}
+	return num
 }
 
 // ExtractTextFromHTML extracts text content from HTML string, focusing on p tags.
@@ -152,6 +168,11 @@ func ExtractTextFromHTML(htmlContent string) (string, error) {
 				buf.WriteString("\n") // newline sau mỗi thẻ <p>
 				return
 			}
+
+			if n.Data == "br" {
+				buf.WriteString("\n")
+				return
+			}
 		}
 
 		for c := n.FirstChild; c != nil; c = c.NextSibling {
@@ -162,4 +183,12 @@ func ExtractTextFromHTML(htmlContent string) (string, error) {
 	extract(doc)
 	result := strings.ReplaceAll(buf.String(), "\n\n", "\n")
 	return result, nil
+}
+
+func ConvertToRawMessage(v any) (json.RawMessage, error) {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return nil, err
+	}
+	return json.RawMessage(b), nil
 }

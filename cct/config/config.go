@@ -10,11 +10,12 @@ import (
 
 // Config holds all configuration for the application
 type Config struct {
-	Server   ServerConfig   `mapstructure:"server"`
-	Database DatabaseConfig `mapstructure:"database"`
-	Auth     AuthConfig     `mapstructure:"auth"`
-	Logging  LoggingConfig  `mapstructure:"logging"`
-	RabbitMQ RabbitMQConfig `mapstructure:"rabbitmq"`
+	Server    ServerConfig    `mapstructure:"server"`
+	Database  DatabaseConfig  `mapstructure:"database"`
+	Auth      AuthConfig      `mapstructure:"auth"`
+	Logging   LoggingConfig   `mapstructure:"logging"`
+	RabbitMQ  RabbitMQConfig  `mapstructure:"rabbitmq"`
+	Scheduler SchedulerConfig `mapstructure:"scheduler"`
 }
 
 // ServerConfig holds all server-related configuration
@@ -51,6 +52,12 @@ type LoggingConfig struct {
 	MaxBackups int    `mapstructure:"max_backups"`
 	MaxAge     int    `mapstructure:"max_age"`
 	Compress   bool   `mapstructure:"compress"`
+}
+
+// SchedulerConfig holds all scheduler-related configuration
+type SchedulerConfig struct {
+	Enabled       bool `mapstructure:"enabled"`
+	CheckInterval int  `mapstructure:"check_interval"` // seconds
 }
 
 // Load loads the configuration from config.yml
@@ -129,6 +136,10 @@ func setDefaults() {
 	viper.SetDefault("rabbitmq.routing_keys", []string{"crawl.#"})
 	viper.SetDefault("rabbitmq.prefetch_count", 1)
 	viper.SetDefault("rabbitmq.reconnect_interval", 5) // seconds
+
+	// Scheduler defaults
+	viper.SetDefault("scheduler.enabled", true)
+	viper.SetDefault("scheduler.check_interval", 60) // seconds
 }
 
 // GetDSN returns the database connection string

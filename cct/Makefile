@@ -10,6 +10,7 @@ GOGET=$(GOCMD) get
 GOMOD=$(GOCMD) mod
 GOVET=$(GOCMD) vet
 GOLINT=golangci-lint
+GOMIGRATE=migrate
 
 # Binary name
 BINARY_NAME=cct
@@ -109,15 +110,17 @@ build-macos:
 	@mkdir -p $(BUILD_DIR)
 	GOOS=darwin GOARCH=amd64 $(GOBUILD) -o $(BUILD_DIR)/$(BINARY_NAME)_macos $(MAIN_PACKAGE)
 
-# Create database schema
-.PHONY: db-schema
-db-schema:
-	@echo "Creating database schema..."
-	@if [ -z "$(DB_NAME)" ]; then \
-		echo "Error: DB_NAME environment variable is not set"; \
-		exit 1; \
-	fi
-	psql -d $(DB_NAME) -f crawler_schema.sql
+# Migrate database
+.PHONY: migrate-create
+migrate-create:
+	@echo "Create migrations for database..."
+	$(GOMIGRATE) create -ext sql -dir migrations $(TITLE)
+
+# Migrate database
+.PHONY: migrate-up
+migrate-up:
+	@echo "Apply migration to database..."
+	$(GOMIGRATE) -database "postgres://postgres:postgres@localhost/crawler?sslmode=disable" -source file://migrations up $(N)
 
 # Help target
 .PHONY: help
@@ -125,15 +128,16 @@ help:
 	@echo "CCT (Crawler Control Tool) Makefile"
 	@echo ""
 	@echo "Usage:"
-	@echo "  make              Build the application after running tests and linting"
-	@echo "  make build        Build the application"
-	@echo "  make run          Run the application"
-	@echo "  make clean        Clean build artifacts"
-	@echo "  make test         Run tests"
-	@echo "  make test-coverage Run tests with coverage report"
-	@echo "  make lint         Run linter"
-	@echo "  make fmt          Format code"
-	@echo "  make deps         Update dependencies"
-	@echo "  make build-all    Build for multiple platforms"
-	@echo "  make db-schema    Create database schema (requires DB_NAME env var)"
-	@echo "  make help         Show this help message"
+	@echo "  make              		Build the application after running tests and linting"
+	@echo "  make build        		Build the application"
+	@echo "  make run          		Run the application"
+	@echo "  make clean        		Clean build artifacts"
+	@echo "  make test         		Run tests"
+	@echo "  make test-coverage		Run tests with coverage report"
+	@echo "  make lint         		Run linter"
+	@echo "  make fmt          		Format code"
+	@echo "  make deps         		Update dependencies"
+	@echo "  make build-all    		Build for multiple platforms"
+	@echo "  make migrate-create <Title> Migrate database with title"
+	@echo "  make migrate-up <N> Apply migration to database, if not set N is all"
+	@echo "  make help         		Show this help message"

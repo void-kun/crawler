@@ -3,43 +3,13 @@ package models
 import (
 	"database/sql"
 	"fmt"
+	"strings"
 	"time"
 
 	"cct/utils"
 
 	"github.com/google/uuid"
 )
-
-// GetAgents retrieves all agents from the database
-func GetAgents(ipAddress, name *string) ([]Agent, error) {
-	rows, err := utils.DB.Query(`
-		SELECT id, name, ip_address, last_heartbeat, is_active, created_at
-		FROM agents
-		WHERE ($1 IS NULL OR ip_address = $1) AND ($2 IS NULL OR name = $2)
-		ORDER BY created_at DESC
-	`, ipAddress, name)
-	if err != nil {
-		return nil, fmt.Errorf("failed to query agents: %w", err)
-	}
-	defer rows.Close()
-
-	var agents []Agent
-	for rows.Next() {
-		var a Agent
-		if err := rows.Scan(
-			&a.ID, &a.Name, &a.IPAddress, &a.LastHeartbeat, &a.IsActive, &a.CreatedAt,
-		); err != nil {
-			return nil, fmt.Errorf("failed to scan agent row: %w", err)
-		}
-		agents = append(agents, a)
-	}
-
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("error iterating agent rows: %w", err)
-	}
-
-	return agents, nil
-}
 
 // GetAgent retrieves an agent by ID
 func GetAgent(id uuid.UUID) (Agent, error) {
@@ -61,16 +31,40 @@ func GetAgent(id uuid.UUID) (Agent, error) {
 	return a, nil
 }
 
-// GetActiveAgents retrieves all active agents
-func GetActiveAgents(ipAddress, name *string) ([]Agent, error) {
-	rows, err := utils.DB.Query(`
+// GetAgents retrieves all agents
+func GetAgents(isActive bool, ipAddress, name string) ([]Agent, error) {
+	query := `
 		SELECT id, name, ip_address, last_heartbeat, is_active, created_at
 		FROM agents
-		WHERE is_active = true AND ($1 IS NULL OR ip_address = $1) AND ($2 IS NULL OR name = $2)
-		ORDER BY created_at DESC
-	`, ipAddress, name)
+	`
+
+	params := []interface{}{}
+	conditions := []string{}
+
+	if isActive {
+		conditions = append(conditions, fmt.Sprintf("is_active = $%d", len(conditions)+1))
+		params = append(params, true)
+	}
+
+	if ipAddress != "" {
+		conditions = append(conditions, fmt.Sprintf("ip_address = $%d", len(conditions)+1))
+		params = append(params, ipAddress)
+	}
+
+	if name != "" {
+		conditions = append(conditions, fmt.Sprintf("name = $%d", len(conditions)+1))
+		params = append(params, name)
+	}
+
+	if len(conditions) > 0 {
+		query += " WHERE " + strings.Join(conditions, " AND ")
+	}
+
+	query += " ORDER BY created_at DESC"
+
+	rows, err := utils.DB.Query(query, params...)
 	if err != nil {
-		return nil, fmt.Errorf("failed to query active agents: %w", err)
+		return nil, fmt.Errorf("failed to query agents: %w", err)
 	}
 	defer rows.Close()
 
@@ -137,12 +131,12 @@ func UpdateAgent(a *Agent) error {
 }
 
 // UpdateAgentHeartbeat updates the last_heartbeat timestamp for an agent
-func UpdateAgentHeartbeat(id uuid.UUID, ipAddress string) error {
+func UpdateAgentHeartbeat(id uuid.UUID) error {
 	_, err := utils.DB.Exec(`
 		UPDATE agents
-		SET last_heartbeat = NOW(), ip_address = $1
-		WHERE id = $2
-	`, ipAddress, id)
+		SET last_heartbeat = NOW()
+		WHERE id = $1
+	`, id)
 	if err != nil {
 		return fmt.Errorf("failed to update agent heartbeat: %w", err)
 	}

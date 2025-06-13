@@ -21,7 +21,7 @@ type AppService struct {
 	spider        *spider.HeadSpider
 	sourceClients map[SourceType]source.WebSource
 	processor     *Processor
-	httpService   *http.Service
+	httpService   http.IService
 }
 
 // NewAppService creates a new application service
@@ -30,7 +30,7 @@ func NewAppService(cfg *config.Config) *AppService {
 	rabbitMQ := NewService(&cfg.RabbitMQ)
 
 	// Create HTTP service if control API is configured
-	var httpService *http.Service
+	var httpService http.IService
 	if cfg.ControlAPI.BaseURL != "" {
 		httpService = http.NewService(&cfg.ControlAPI)
 		logger.Info().Str("baseURL", cfg.ControlAPI.BaseURL).Msg("Control API enabled")
@@ -38,9 +38,18 @@ func NewAppService(cfg *config.Config) *AppService {
 
 	// Create spider
 	spiderInstance := spider.NewHeadSpider(true, cfg)
+	_, err := spiderInstance.CreatePage()
+	if err != nil {
+		logger.Error().Err(err).Msg("Error creating page")
+	}
+
+	// Load session data
+	if err := spiderInstance.LoadSessionDataFromJSON(); err != nil {
+		logger.Error().Err(err).Msg("Error loading session data")
+	}
 
 	// Create processor
-	processor := NewProcessor(rabbitMQ, cfg, spiderInstance)
+	processor := NewProcessor(rabbitMQ, cfg, spiderInstance, httpService)
 
 	// Register default task processors
 	processor.RegisterDefaultTaskProcessors()
@@ -57,6 +66,7 @@ func NewAppService(cfg *config.Config) *AppService {
 
 // RegisterSourceClient registers a source client
 func (s *AppService) RegisterSourceClient(sourceType SourceType, client source.WebSource) {
+	logger.Info().Str("source", string(sourceType)).Msg("Registering source client")
 	s.sourceClients[sourceType] = client
 	s.processor.RegisterSourceClient(sourceType, client)
 }
@@ -108,6 +118,6 @@ func (s *AppService) Stop() {
 	}
 }
 
-func (s *AppService) GetHTTPService() *http.Service {
+func (s *AppService) GetHTTPService() http.IService {
 	return s.httpService
 }

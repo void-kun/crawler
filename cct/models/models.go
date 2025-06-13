@@ -44,6 +44,8 @@ type Website struct {
 	ScriptName    string    `json:"script_name"`
 	CrawlInterval int       `json:"crawl_interval"`
 	Enabled       bool      `json:"enabled"`
+	Username      string    `json:"username"`
+	Password      string    `json:"password"`
 	CreatedAt     time.Time `json:"created_at"`
 }
 
@@ -53,11 +55,7 @@ type Novel struct {
 	WebsiteID     int          `json:"website_id"`
 	ExternalID    string       `json:"external_id"`
 	Title         string       `json:"title"`
-	Author        string       `json:"author"`
-	Genres        []string     `json:"genres"`
-	CoverURL      string       `json:"cover_url"`
-	Description   string       `json:"description"`
-	Status        string       `json:"status"` // ongoing or completed
+	Status        string       `json:"status"`
 	SourceURL     string       `json:"source_url"`
 	LastCrawledAt sql.NullTime `json:"last_crawled_at"`
 	CreatedAt     time.Time    `json:"created_at"`
@@ -72,20 +70,8 @@ type Chapter struct {
 	ChapterNumber int          `json:"chapter_number"`
 	URL           string       `json:"url"`
 	Content       string       `json:"content"`
-	Status        string       `json:"status"` // pending, crawled, failed
 	CrawledAt     sql.NullTime `json:"crawled_at"`
 	Error         string       `json:"error"`
-}
-
-// CrawlJob represents a job to crawl a novel
-type CrawlJob struct {
-	ID         int          `json:"id"`
-	NovelID    int          `json:"novel_id"`
-	Status     string       `json:"status"` // pending, in_progress, success, failed
-	CreatedAt  time.Time    `json:"created_at"`
-	StartedAt  sql.NullTime `json:"started_at"`
-	FinishedAt sql.NullTime `json:"finished_at"`
-	Error      string       `json:"error"`
 }
 
 // Agent represents a crawler agent
@@ -116,4 +102,25 @@ type APIToken struct {
 	ExpiresAt   NullTime  `json:"expires_at"`
 	CreatedAt   time.Time `json:"created_at"`
 	LastUsedAt  NullTime  `json:"last_used_at"`
+}
+
+// NovelSchedule represents a scheduled crawl for a novel
+type NovelSchedule struct {
+	ID              int          `json:"id"`
+	NovelID         int          `json:"novel_id"`
+	Enabled         bool         `json:"enabled"`
+	IntervalSeconds int          `json:"interval_seconds"`
+	LastRunAt       sql.NullTime `json:"last_run_at"`
+	NextRunAt       sql.NullTime `json:"next_run_at"`
+	CreatedAt       time.Time    `json:"created_at"`
+	UpdatedAt       time.Time    `json:"updated_at"`
+}
+
+// ChapterCrawlLog represents a log entry for chapter crawling
+type ChapterCrawlLog struct {
+	ID        int       `json:"id"`
+	ChapterID int       `json:"chapter_id"`
+	Status    string    `json:"status"` // success or failed
+	Error     string    `json:"error"`
+	CreatedAt time.Time `json:"created_at"`
 }

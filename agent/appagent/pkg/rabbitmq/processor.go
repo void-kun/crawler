@@ -2,6 +2,7 @@ package rabbitmq
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"sync"
 	"time"
@@ -28,21 +29,15 @@ type Processor struct {
 	priorityTask   chan Task
 	normalTask     chan Task
 	taskProcessors map[string]TaskProcessor
-	httpService    *http.Service
+	httpService    http.IService
 }
 
 // TaskProcessor is a function that processes a specific task
 type TaskProcessor func(task any, sourceClient source.WebSource, spider spider.TaskSpider) (any, error)
 
 // NewProcessor creates a new task processor
-func NewProcessor(service *Service, cfg *config.Config, spider *spider.HeadSpider) *Processor {
+func NewProcessor(service *Service, cfg *config.Config, spider *spider.HeadSpider, httpService http.IService) *Processor {
 	ctx, cancel := context.WithCancel(context.Background())
-
-	// Create HTTP service if control API is configured
-	var httpService *http.Service
-	if cfg.ControlAPI.BaseURL != "" {
-		httpService = http.NewService(&cfg.ControlAPI)
-	}
 
 	return &Processor{
 		service:        service,
@@ -184,12 +179,12 @@ func (p *Processor) processTask(task Task) {
 
 	// Report task result if control API is configured
 	if p.httpService != nil && p.httpService.IsReportingEnabled() {
-		taskResultSvc := p.httpService.GetTaskResultService()
+		taskSvc := p.httpService.GetTaskService()
 		ctx := context.Background()
 
 		if err != nil {
 			// Report error
-			if reportErr := taskResultSvc.ReportTaskError(ctx, taskID, httpTaskType, httpSourceType, url, err); reportErr != nil {
+			if reportErr := taskSvc.ReportTaskError(ctx, taskID, httpTaskType, httpSourceType, url, err); reportErr != nil {
 				logger.Error().Err(reportErr).Str("taskID", taskID).Msg("Error reporting task error")
 			}
 			logger.Error().Err(err).Str("taskID", taskID).Str("url", url).Msg("Error processing task")
@@ -197,7 +192,7 @@ func (p *Processor) processTask(task Task) {
 		}
 
 		// Report success
-		if reportErr := taskResultSvc.ReportTaskSuccess(ctx, taskID, httpTaskType, httpSourceType, url, data); reportErr != nil {
+		if reportErr := taskSvc.ReportTaskSuccess(ctx, taskID, httpTaskType, httpSourceType, url, data.(json.RawMessage)); reportErr != nil {
 			logger.Error().Err(reportErr).Str("taskID", taskID).Msg("Error reporting task success")
 		}
 	} else if err != nil {
@@ -218,10 +213,12 @@ func (p *Processor) ProcessTasks() {
 				return
 			case task := <-p.priorityTask:
 				p.processTask(task)
+				time.Sleep(3 * time.Second)
 			case <-time.After(100 * time.Millisecond):
 				select {
 				case task := <-p.normalTask:
 					p.processTask(task)
+					time.Sleep(3 * time.Second)
 				default:
 					time.Sleep(100 * time.Millisecond)
 				}
@@ -250,7 +247,6 @@ func (p *Processor) RegisterDefaultTaskProcessors() {
 		if err != nil {
 			return nil, fmt.Errorf("error processing book task: %w", err)
 		}
-
 		logger.Info().Interface("task", bookTask).Msg("Successfully processed book task")
 		return data, nil
 	})
@@ -282,15 +278,12 @@ func (p *Processor) RegisterDefaultTaskProcessors() {
 		}
 
 		logger.Info().Interface("task", sessionTask).Msg("Processing session task")
-
-		p.spider.SetHeadless(false)
 		// Process the session URL using the spider
 		data, err := spider.ProcessPageWithCallback(sessionTask.URL, sourceClient.ExtractSession)
 		if err != nil {
 			return nil, fmt.Errorf("error processing session task: %w", err)
 		}
 
-		p.spider.SetHeadless(true)
 		logger.Info().Interface("task", sessionTask).Msg("Successfully processed session task")
 		return data, nil
 	})

@@ -3,8 +3,10 @@ package spider
 import (
 	"encoding/json"
 	"fmt"
+	"math/rand"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/go-rod/rod"
@@ -23,7 +25,6 @@ type HeadSpider struct {
 	prepSteps         []func(*rod.Browser, *HeadSpider) error
 	responseCallbacks []func(url string, page *rod.Page, hs *HeadSpider) error
 	cookies           []*proto.NetworkCookie
-	isHeadless        bool
 	captchaHandler    CaptchaHandler
 	sessionData       *SessionData
 	sessionFile       string
@@ -37,12 +38,39 @@ func (s *HeadSpider) CreatePage() (*rod.Page, error) {
 		}
 	}
 
-	page, err := s.browser.Page(proto.TargetCreateTarget{URL: "about:blank"})
-	if err != nil {
-		return nil, err
-	}
-
+	page := s.browser.MustPage()
 	return page, nil
+}
+
+var userAgents = []string{
+	// Chrome Desktop - Windows
+	"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.6367.93 Safari/537.36",
+
+	// Chrome Desktop - macOS
+	"Mozilla/5.0 (Macintosh; Intel Mac OS X 13_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.6367.93 Safari/537.36",
+
+	// Chrome Android - Samsung
+	"Mozilla/5.0 (Linux; Android 13; SM-G991B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.6367.93 Mobile Safari/537.36",
+
+	// Chrome Android - Xiaomi
+	"Mozilla/5.0 (Linux; Android 12; M2012K11AG) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.6312.105 Mobile Safari/537.36",
+
+	// Chrome Android - Oppo
+	"Mozilla/5.0 (Linux; Android 14; CPH2411) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.6367.93 Mobile Safari/537.36",
+
+	// Safari - iPhone
+	"Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
+
+	// Safari - iPad
+	"Mozilla/5.0 (iPad; CPU OS 16_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.5 Mobile/15E148 Safari/604.1",
+
+	// Chrome iOS
+	"Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/537.36 (KHTML, like Gecko) CriOS/124.0.6367.93 Mobile/15E148 Safari/604.1",
+}
+
+func getRandomUserAgent() string {
+	rand.Seed(time.Now().UnixNano())
+	return userAgents[rand.Intn(len(userAgents))]
 }
 
 func (s *HeadSpider) InitBrowser() error {
@@ -60,23 +88,27 @@ func (s *HeadSpider) InitBrowser() error {
 		s.browserLauncher.Proxy(s.proxyURL)
 	}
 
-	// Add browser flags to improve stability and performance
-	s.browserLauncher.Set("disable-web-security")
-	s.browserLauncher.Set("disable-background-networking")
-	s.browserLauncher.Set("disable-background-timer-throttling")
-	s.browserLauncher.Set("disable-backgrounding-occluded-windows")
-	s.browserLauncher.Set("disable-breakpad")
-	s.browserLauncher.Set("disable-component-extensions-with-background-pages")
-	s.browserLauncher.Set("disable-extensions")
-	s.browserLauncher.Set("disable-features", "TranslateUI,BlinkGenPropertyTrees")
-	s.browserLauncher.Set("disable-ipc-flooding-protection")
-	s.browserLauncher.Set("disable-renderer-backgrounding")
-	s.browserLauncher.Set("enable-features", "NetworkService,NetworkServiceInProcess")
+	userAgent := getRandomUserAgent()
 
-	s.browserLauncher.Headless(s.isHeadless)
+	// Add browser flags to improve stability and performance
+	s.browserLauncher.Set("window-size", "1280,1024")
+	s.browserLauncher.Set("disable-web-security")
+	s.browserLauncher.Set("disable-site-isolation-trials")
+	s.browserLauncher.Set("allow-third-party-cookies")
+
+	s.browserLauncher.Set("disable-features", strings.Join([]string{
+		"SameSiteByDefaultCookies",
+		"CookiesWithoutSameSiteMustBeSecure",
+		"TrackingProtection",
+		"EphemeralStorage",
+	}, ","))
+
+	s.browserLauncher.Set("enable-features", "NetworkService,NetworkServiceInProcess")
+	s.browserLauncher.Set("user-agent", userAgent)
+	s.browserLauncher.Headless(false)
+
 	url := s.browserLauncher.MustLaunch()
 	s.browser = rod.New().ControlURL(url).MustConnect()
-
 	return nil
 }
 
@@ -94,7 +126,6 @@ func (s *HeadSpider) CloseBrowser() {
 func NewHeadSpider(isHeadless bool, conf *config.Config) *HeadSpider {
 	return &HeadSpider{
 		browserTimeout: conf.BrowserTimeout * time.Second, // Increased timeout to 2 minutes
-		isHeadless:     isHeadless,
 		captchaHandler: NewManualCaptchaHandler(),
 		proxyURL:       conf.ProxyURL,
 		sessionFile:    conf.SessionFile,
@@ -111,15 +142,6 @@ func NewHeadSpider(isHeadless bool, conf *config.Config) *HeadSpider {
 			htmlCallbacks:     make(map[string]func(url string, element string) error),
 			responseCallbacks: []func(url string, resp *http.Response) error{},
 		},
-	}
-}
-
-func (s *HeadSpider) SetHeadless(isHeadless bool) {
-	s.isHeadless = isHeadless
-
-	if s.browser != nil {
-		s.CloseBrowser()
-		s.InitBrowser()
 	}
 }
 

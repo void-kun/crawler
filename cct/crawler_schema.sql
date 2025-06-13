@@ -5,6 +5,8 @@ CREATE TABLE websites (
     base_url TEXT NOT NULL,
     script_name TEXT NOT NULL,
     crawl_interval INT DEFAULT 86400,
+    username TEXT,
+    password TEXT,
     enabled BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT now()
 );

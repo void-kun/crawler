@@ -4,12 +4,14 @@ import (
 	"log" // Standard log for initialization only
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"cct/config"
 	"cct/handlers"
 	"cct/middleware"
 	"cct/pkg/logger"
+	"cct/pkg/scheduler"
 	"cct/utils"
 )
 
@@ -38,6 +40,22 @@ func main() {
 	}
 	defer handlers.CloseRabbitMQService()
 
+	// Initialize and start scheduler if enabled
+	if cfg.Scheduler.Enabled {
+		agentService, err := handlers.GetAgentService()
+		if err != nil {
+			logger.Fatal().Err(err).Msg("Failed to get agent service for scheduler")
+		}
+
+		schedulerService := scheduler.NewScheduler(cfg, agentService)
+		if err := schedulerService.Start(); err != nil {
+			logger.Fatal().Err(err).Msg("Failed to start scheduler")
+		}
+		defer schedulerService.Stop()
+
+		logger.Info().Msg("Scheduler started successfully")
+	}
+
 	// Create a new router
 	mux := http.NewServeMux()
 
@@ -63,16 +81,6 @@ func main() {
 	mux.HandleFunc("PUT /api/chapters/{id}", handlers.UpdateChapter)
 	mux.HandleFunc("DELETE /api/chapters/{id}", handlers.DeleteChapter)
 
-	// Crawl Jobs
-	mux.HandleFunc("GET /api/crawl-jobs", handlers.GetCrawlJobs)
-	mux.HandleFunc("GET /api/crawl-jobs/{id}", handlers.GetCrawlJob)
-	mux.HandleFunc("POST /api/crawl-jobs", handlers.CreateCrawlJob)
-	mux.HandleFunc("PUT /api/crawl-jobs/{id}", handlers.UpdateCrawlJob)
-	// mux.HandleFunc("DELETE /api/crawl-jobs/{id}", handlers.DeleteCrawlJob)
-	// mux.HandleFunc("POST /api/crawl-jobs/{id}/start", handlers.StartCrawlJob)
-	// mux.HandleFunc("POST /api/crawl-jobs/{id}/complete", handlers.CompleteCrawlJob)
-	// mux.HandleFunc("POST /api/crawl-jobs/{id}/fail", handlers.FailCrawlJob)
-
 	// Agents
 	mux.HandleFunc("GET /api/agents", handlers.GetAgents)
 	mux.HandleFunc("GET /api/agents/{id}", handlers.GetAgent)
@@ -90,9 +98,21 @@ func main() {
 	mux.HandleFunc("PUT /api/users/{id}/password", handlers.UpdateUserPassword)
 	mux.HandleFunc("DELETE /api/users/{id}", handlers.DeleteUser)
 
+	// Schedules
+	mux.HandleFunc("GET /api/schedules", handlers.GetSchedules)
+	mux.HandleFunc("GET /api/schedules/due", handlers.GetDueSchedules)
+	mux.HandleFunc("GET /api/schedules/{id}", handlers.GetSchedule)
+	mux.HandleFunc("POST /api/schedules", handlers.CreateSchedule)
+	mux.HandleFunc("PUT /api/schedules/{id}", handlers.UpdateSchedule)
+	mux.HandleFunc("DELETE /api/schedules/{id}", handlers.DeleteSchedule)
+	mux.HandleFunc("POST /api/schedules/{id}/trigger", handlers.TriggerSchedule)
+
+	// Chapter crawl logs
+	mux.HandleFunc("GET /api/chapters/{id}/logs", handlers.GetChapterCrawlLogs)
+
 	// RabbitMQ Tasks
 	mux.HandleFunc("POST /api/tasks/publish", handlers.PublishTask)
-	max.HandleFunc("POST /api/tasks/result", handlers.ResultTask)
+	mux.HandleFunc("POST /api/tasks/result", handlers.ResultTask)
 
 	// Authentication
 	mux.HandleFunc("POST /api/auth/login", handlers.Login)
@@ -128,27 +148,28 @@ func main() {
 	}
 }
 
+var ignoreLogPaths = []string{
+	"heartbeat",
+}
+
 // loggingMiddleware logs all requests
 func loggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		start := time.Now()
-
-		// Create a custom response writer to capture the status code
-		lw := &loggingResponseWriter{
-			ResponseWriter: w,
-			statusCode:     http.StatusOK,
+		for _, path := range ignoreLogPaths {
+			if strings.HasSuffix(r.RequestURI, path) {
+				next.ServeHTTP(w, r)
+				return
+			}
 		}
+		start := time.Now()
+		lw := &loggingResponseWriter{ResponseWriter: w, statusCode: http.StatusOK}
 
-		// Call the next handler
 		next.ServeHTTP(lw, r)
-
-		// Log the request
-		duration := time.Since(start)
 		logger.Info().
 			Str("method", r.Method).
 			Str("path", r.RequestURI).
 			Int("status", lw.statusCode).
-			Dur("duration ms", duration).
+			Dur("duration ms", time.Since(start)).
 			Msg("Request processed")
 	})
 }

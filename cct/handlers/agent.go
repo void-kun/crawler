@@ -20,14 +20,7 @@ func GetAgents(w http.ResponseWriter, r *http.Request) {
 	var agents []models.Agent
 	var err error
 
-	if activeOnly {
-		// Get only active agents
-		agents, err = models.GetActiveAgents(&ipAddress, &name)
-	} else {
-		// Get all agents
-		agents, err = models.GetAgents(&ipAddress, &name)
-	}
-
+	agents, err = models.GetAgents(activeOnly, ipAddress, name)
 	if err != nil {
 		http.Error(w, "Failed to get agents: "+err.Error(), http.StatusInternalServerError)
 		return
@@ -118,11 +111,8 @@ func HeartbeatAgent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Get IP address from request
-	ipAddress := r.RemoteAddr
-
 	// Update heartbeat
-	if err := models.UpdateAgentHeartbeat(id, ipAddress); err != nil {
+	if err := models.UpdateAgentHeartbeat(id); err != nil {
 		http.Error(w, "Failed to update agent heartbeat: "+err.Error(), http.StatusInternalServerError)
 		return
 	}

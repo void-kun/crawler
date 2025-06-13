@@ -65,7 +65,6 @@ func (s *HeadSpider) ProcessPageWithCallback(url string, callback func(url strin
 	if err != nil {
 		return nil, fmt.Errorf("error creating page: %w", err)
 	}
-	defer page.Close()
 
 	// Navigate to the URL
 	if err := page.Navigate(url); err != nil {
@@ -77,29 +76,10 @@ func (s *HeadSpider) ProcessPageWithCallback(url string, callback func(url strin
 		return nil, fmt.Errorf("error waiting for page to load: %w", err)
 	}
 
-	// Apply session data
-	if err := s.LoadSessionDataFromJSON(); err != nil {
-		log.Printf("Warning: Failed to load session data: %v", err)
-	}
-
-	if err := s.ApplySessionData(page); err != nil {
-		log.Printf("Warning: Failed to apply session data: %v", err)
-	}
-
 	// Call the callback function
 	var data any
 	if data, err = callback(url, page, s); err != nil {
 		return nil, fmt.Errorf("error in callback: %w", err)
-	}
-
-	// Extract session data
-	if err := s.ExtractSessionData(page); err != nil {
-		log.Printf("Warning: Failed to extract session data: %v", err)
-	}
-
-	// Save session data
-	if err := s.SaveSessionDataToJSON(); err != nil {
-		log.Printf("Warning: Failed to save session data: %v", err)
 	}
 
 	return data, nil

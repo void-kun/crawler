@@ -11,7 +11,8 @@ type Book struct {
 }
 
 type Chapter struct {
-	ChapterId   string
-	ChapterName string
-	ChapterUrl  string
+	ChapterId     string
+	ChapterName   string
+	ChapterUrl    string
+	ChapterNumber int
 }

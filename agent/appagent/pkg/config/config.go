@@ -6,12 +6,6 @@ import (
 	"github.com/spf13/viper"
 )
 
-type Stv struct {
-	Username string `mapstructure:"username"`
-	Password string `mapstructure:"password"`
-	Origin   string `mapstructure:"origin"`
-}
-
 // RabbitMQConfig holds the configuration for RabbitMQ
 type RabbitMQConfig struct {
 	URL               string        `mapstructure:"url"`
@@ -63,9 +57,6 @@ type Config struct {
 	// Storage settings
 	OutputDir   string `mapstructure:"output_dir"`
 	SessionFile string `mapstructure:"session_file"`
-
-	// Source-specific settings
-	Stv Stv `mapstructure:"stv"`
 
 	// RabbitMQ settings
 	RabbitMQ RabbitMQConfig `mapstructure:"rabbitmq"`

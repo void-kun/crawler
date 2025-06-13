@@ -2,72 +2,54 @@ package stv
 
 import (
 	"fmt"
-	"strings"
+	"time"
 
 	"github.com/go-rod/rod"
+	"github.com/zrik/agent/appagent/pkg/logger"
 	"github.com/zrik/agent/appagent/pkg/spider"
 )
 
-func (s *Sangtacviet) ExtractChapter(url string, page *rod.Page, spider spider.TaskSpider) (any, error) {
-	_, err := AsHeadSpider(spider)
+func (s *Sangtacviet) ExtractChapter(chapterUrl string, page *rod.Page, hSpider spider.TaskSpider) (any, error) {
+	_, err := AsHeadSpider(hSpider)
 	if err != nil {
 		return nil, fmt.Errorf("spider is not of type *spider.HeadSpider")
 	}
+	defer page.MustClose()
 
-	paths := strings.Split(url, "/")
-	bookId := paths[len(paths)-3]
-	chapterId := paths[len(paths)-2]
-	bookHost := paths[len(paths)-5]
-	bookSty := paths[len(paths)-4]
+	hSpider.ApplySessionData(page)
 
-	chapterUrl := fmt.Sprintf("%s/index.php?bookid=%s&c=%s&h=%s&ngmar=readc&sajax=readchapter&sty=%s&exts=", s.origin, bookId, chapterId, bookHost, bookSty)
-	// Extract chapters
-	result := page.MustEval(`
-		async (url) => {
-		  function chapterApi(url) {
-				return new Promise((resolve, reject) => {
-					const xhr = new XMLHttpRequest();
-	  			xhr.open("POST", url, true);
-					xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+	page.MustWaitLoad()
 
-					xhr.onload  = function () {
-						if (xhr.status == 200) {
-							if (xhr.responseText == "") {
-								resolve("error: response text empty");
-							}
+	// Wait for chapter data loaded
+	loopTime := 0
+	var chapterContent *rod.Element
+	for {
+		spider.CircleMoveMouse(page)
+		logger.Info().Msg("Waiting for chapter data to load...")
 
-							let jsonVal = JSON.parse(xhr.responseText);
-							try {
-								if (jsonVal.code == 0) {
-									if (!jsonVal.data) {
-										resolve("error: data is empty");
-										return;
-									}
-									resolve(jsonVal.data);
-								} else {
-									 resolve("error: code is " + jsonVal.code);
-								}
-							} catch(err) {
-								resolve("error: " + err);
-							}
-						} else {
-							resolve("error: status not 200");
-						}
-					}
+		if has, ele, _ := page.Has("div#content-container div.contentbox i"); has {
+			logger.Info().Str("chapter", ele.MustText()).Msg("Chapter data loaded")
 
-					xhr.send();
-				})
-			}
-
-			const data = await chapterApi(url);
-			return data;
+			chapterContent = page.MustElement("div#content-container div.contentbox")
+			break
 		}
-		`, chapterUrl).String()
 
-	if !strings.HasPrefix(result, "error:") {
-		result, _ = ExtractTextFromHTML(result)
-		return result, nil
+		// Click the element to load the chapter
+
+		loopTime++
+		if loopTime > 3 {
+			page.MustReload().MustWaitLoad()
+			time.Sleep(1*time.Second + time.Duration(loopTime)*time.Second)
+		}
+
+		time.Sleep(2 * time.Second)
 	}
 
-	return nil, fmt.Errorf("failed to extract chapter: %s", result)
+	if chapterContent == nil {
+		return nil, fmt.Errorf("failed to locate chapter content")
+	}
+
+	result, _ := ExtractTextFromHTML(chapterContent.MustHTML())
+	chapterBytes, _ := ConvertToRawMessage(result)
+	return chapterBytes, nil
 }

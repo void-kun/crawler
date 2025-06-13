@@ -11,7 +11,6 @@ type TaskSpider interface {
 	InitBrowser() error
 	CreatePage() (*rod.Page, error)
 	CloseBrowser()
-	SetHeadless(isHeadless bool)
 
 	// Session management
 	GetCookies() []*proto.NetworkCookie

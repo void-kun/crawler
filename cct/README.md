@@ -62,6 +62,11 @@ rabbitmq:
     - "crawl.metruyenchu.chapter"
   prefetch_count: 1
   reconnect_interval: 5 # seconds
+
+# Scheduler configuration
+scheduler:
+  enabled: true
+  check_interval: 60 # seconds
 ```
 
 You can also override these settings using environment variables. For example, to change the database host, you can set the `DATABASE_HOST` environment variable.
@@ -136,6 +141,17 @@ make help
 - `POST /api/chapters`: Create a new chapter
 - `PUT /api/chapters/{id}`: Update a chapter
 - `DELETE /api/chapters/{id}`: Delete a chapter
+- `GET /api/chapters/{id}/logs`: Get crawl logs for a chapter
+
+### Schedules
+
+- `GET /api/schedules`: Get all schedules
+- `GET /api/schedules?novel_id={id}`: Get schedules for a specific novel
+- `GET /api/schedules/{id}`: Get a schedule by ID
+- `POST /api/schedules`: Create a new schedule
+- `PUT /api/schedules/{id}`: Update a schedule
+- `DELETE /api/schedules/{id}`: Delete a schedule
+- `POST /api/schedules/{id}/trigger`: Trigger a schedule to run immediately
 
 ### Crawl Jobs
 
@@ -188,6 +204,49 @@ make help
 
 - `POST /api/auth/login`: Login with email and password to get an API token
 - `POST /api/auth/register`: Register a new user account
+
+## Schedule Feature
+
+The application includes a scheduler that automatically crawls novels at specified intervals.
+
+### How it works:
+
+1. **Create Schedule**: Use the API to create a schedule for a novel with a specified interval
+2. **Scheduler**: Runs in the background and checks for due schedules every minute (configurable)
+3. **Book Crawl**: When a schedule is due, it publishes a book crawl task to active agents
+4. **Chapter Crawl**: After book crawl completes, it automatically creates chapter crawl tasks for new/empty chapters
+5. **Logging**: All chapter crawl results are logged to `chapter_crawl_logs` table
+
+### Creating a Schedule
+
+```bash
+POST /api/schedules
+```
+
+Request body:
+```json
+{
+  "novel_id": 1,
+  "enabled": true,
+  "interval_seconds": 86400
+}
+```
+
+### Schedule Management
+
+- `GET /api/schedules`: List all schedules
+- `GET /api/schedules?novel_id=1`: Get schedules for a specific novel
+- `PUT /api/schedules/{id}`: Update schedule (enable/disable, change interval)
+- `DELETE /api/schedules/{id}`: Delete schedule
+- `POST /api/schedules/{id}/trigger`: Trigger schedule to run immediately
+
+### Triggering a Schedule Immediately
+
+```bash
+POST /api/schedules/{id}/trigger
+```
+
+This endpoint updates the `next_run_at` time to the current time, causing the scheduler to pick it up on the next check cycle (within 60 seconds by default).
 
 ## RabbitMQ Integration
 

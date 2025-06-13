@@ -10,7 +10,7 @@ import (
 // GetWebsites retrieves all websites from the database
 func GetWebsites() ([]Website, error) {
 	rows, err := utils.DB.Query(`
-		SELECT id, name, base_url, script_name, crawl_interval, enabled, created_at
+		SELECT id, name, base_url, script_name, crawl_interval, enabled, created_at, username, password
 		FROM websites
 		ORDER BY id
 	`)
@@ -22,7 +22,7 @@ func GetWebsites() ([]Website, error) {
 	var websites []Website
 	for rows.Next() {
 		var w Website
-		if err := rows.Scan(&w.ID, &w.Name, &w.BaseURL, &w.ScriptName, &w.CrawlInterval, &w.Enabled, &w.CreatedAt); err != nil {
+		if err := rows.Scan(&w.ID, &w.Name, &w.BaseURL, &w.ScriptName, &w.CrawlInterval, &w.Enabled, &w.CreatedAt, &w.Username, &w.Password); err != nil {
 			return nil, fmt.Errorf("failed to scan website row: %w", err)
 		}
 		websites = append(websites, w)
@@ -39,10 +39,10 @@ func GetWebsites() ([]Website, error) {
 func GetWebsite(id int) (Website, error) {
 	var w Website
 	err := utils.DB.QueryRow(`
-		SELECT id, name, base_url, script_name, crawl_interval, enabled, created_at
+		SELECT id, name, base_url, script_name, crawl_interval, enabled, created_at, username, password
 		FROM websites
 		WHERE id = $1
-	`, id).Scan(&w.ID, &w.Name, &w.BaseURL, &w.ScriptName, &w.CrawlInterval, &w.Enabled, &w.CreatedAt)
+	`, id).Scan(&w.ID, &w.Name, &w.BaseURL, &w.ScriptName, &w.CrawlInterval, &w.Enabled, &w.CreatedAt, &w.Username, &w.Password)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return Website{}, fmt.Errorf("website with ID %d not found", id)
@@ -56,10 +56,10 @@ func GetWebsite(id int) (Website, error) {
 // CreateWebsite creates a new website in the database
 func CreateWebsite(w *Website) error {
 	err := utils.DB.QueryRow(`
-		INSERT INTO websites (name, base_url, script_name, crawl_interval, enabled)
-		VALUES ($1, $2, $3, $4, $5)
+		INSERT INTO websites (name, base_url, script_name, crawl_interval, enabled, username, password)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
 		RETURNING id, created_at
-	`, w.Name, w.BaseURL, w.ScriptName, w.CrawlInterval, w.Enabled).Scan(&w.ID, &w.CreatedAt)
+	`, w.Name, w.BaseURL, w.ScriptName, w.CrawlInterval, w.Enabled).Scan(&w.ID, &w.CreatedAt, &w.Username, &w.Password)
 	if err != nil {
 		return fmt.Errorf("failed to create website: %w", err)
 	}

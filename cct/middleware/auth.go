@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"net/http"
-	"strings"
 	"time"
 
 	"cct/pkg/logger"
@@ -40,22 +39,22 @@ func AuthMiddleware(next http.Handler) http.Handler {
 			return
 		}
 		// Get the Authorization header
-		authHeader := r.Header.Get("Authorization")
+		authHeader := r.Header.Get("Api-Key")
 		if authHeader == "" {
-			http.Error(w, "Authorization header is required", http.StatusUnauthorized)
-			logger.Debug().Str("path", r.URL.Path).Msg("Missing Authorization header")
+			http.Error(w, "Api-Key header is required", http.StatusUnauthorized)
+			logger.Debug().Str("path", r.URL.Path).Msg("Missing Api-Key header")
 			return
 		}
 
 		// Check if the header starts with "Bearer "
-		if !strings.HasPrefix(authHeader, "Bearer ") {
-			http.Error(w, "Invalid authorization format. Expected 'Bearer TOKEN'", http.StatusUnauthorized)
-			logger.Debug().Str("path", r.URL.Path).Msg("Invalid Authorization format")
+		if authHeader == "" {
+			http.Error(w, "Invalid Api-Key format. Expected 'TOKEN'", http.StatusUnauthorized)
+			logger.Debug().Str("path", r.URL.Path).Msg("Invalid Api-Key format")
 			return
 		}
 
 		// Extract the token
-		token := strings.TrimPrefix(authHeader, "Bearer ")
+		token := authHeader
 		if token == "" {
 			http.Error(w, "Token is required", http.StatusUnauthorized)
 			logger.Debug().Str("path", r.URL.Path).Msg("Empty token")
@@ -109,11 +108,6 @@ func AuthMiddleware(next http.Handler) http.Handler {
 
 		// Set the user ID in the request context
 		ctx := context.WithValue(r.Context(), UserIDContextKey, userID)
-
-		logger.Debug().
-			Str("path", r.URL.Path).
-			Int("user_id", userID).
-			Msg("Authentication successful")
 
 		// Call the next handler
 		next.ServeHTTP(w, r.WithContext(ctx))

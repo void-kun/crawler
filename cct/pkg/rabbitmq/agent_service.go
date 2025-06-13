@@ -53,7 +53,7 @@ func (s *AgentService) refreshActiveAgents() error {
 	}
 
 	// Get active agents from the database
-	agents, err := models.GetActiveAgents(nil, nil)
+	agents, err := models.GetAgents(true, "", "")
 	if err != nil {
 		return fmt.Errorf("failed to get active agents: %w", err)
 	}
